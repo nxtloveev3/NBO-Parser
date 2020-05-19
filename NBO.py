@@ -1,21 +1,22 @@
-from lib import basicReadingFunctions
+from lib import basicReadingFunctions as brf
+import copy
 
 # These two function extract the information needed and seperate them to different seperate files
 # based on the origin file(weather it is a triplet or singlet)
 def tripletFile(file):
-    nboSumStart = basicReadingFunctions.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNAO = basicReadingFunctions.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
-    endNAO = basicReadingFunctions.find("Summary of Natural Population Analysis:",file)
-    startNBOalpha = basicReadingFunctions.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
-    startNBObeta = basicReadingFunctions.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
-    endNBO = basicReadingFunctions.find("NHO DIRECTIONALITY AND BOND BENDING",file)
-    startCMO = basicReadingFunctions.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
-    endCMO = basicReadingFunctions.find("Molecular Orbital Atom-Atom Bonding Character",file)
-    startPert = basicReadingFunctions.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
-    endPert = basicReadingFunctions.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNLMO = basicReadingFunctions.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
-    endNLMO = basicReadingFunctions.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
-    endNLMO2 = basicReadingFunctions.find("NBO analysis completed",file) 
+    nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+    startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
+    endNAO = brf.find("Summary of Natural Population Analysis:",file)
+    startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
+    startNBObeta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
+    endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
+    startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
+    endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
+    startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
+    endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+    startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
+    endNLMO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
+    endNLMO2 = brf.find("NBO analysis completed",file) 
     nboSumAlpha = file[nboSumStart[0]:startNLMO[0]]
     nboSumBeta = file[nboSumStart[1]:startNLMO[1]]
     nlmoAlpha = file[startNLMO[0]:endNLMO[0]]
@@ -32,17 +33,17 @@ def tripletFile(file):
     return (nboSumAlpha,nboSumBeta,nlmoAlpha,nlmoBeta,naoAll,naoAlpha,naoBeta,nboAlpha,nboBeta,cmoAlpha,cmoBeta,pertAlpha,pertBeta)    
     
 def singletFile(file):
-    nboSumStart = basicReadingFunctions.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNAO = basicReadingFunctions.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
-    endNAO = basicReadingFunctions.find("Summary of Natural Population Analysis:",file)
-    startNBOalpha = basicReadingFunctions.find("NATURAL BOND ORBITAL ANALYSIS",file)
-    endNBO = basicReadingFunctions.find("NHO DIRECTIONALITY AND BOND BENDING",file)
-    startCMO = basicReadingFunctions.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
-    endCMO = basicReadingFunctions.find("Molecular Orbital Atom-Atom Bonding Character",file)
-    startPert = basicReadingFunctions.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
-    endPert = basicReadingFunctions.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNLMO = basicReadingFunctions.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
-    endNLMO2 = basicReadingFunctions.find("NBO analysis completed",file) 
+    nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+    startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
+    endNAO = brf.find("Summary of Natural Population Analysis:",file)
+    startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS",file)
+    endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
+    startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
+    endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
+    startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
+    endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+    startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
+    endNLMO2 = brf.find("NBO analysis completed",file) 
     nboSum = file[nboSumStart[0]:startNLMO[0]]
     nlmo = file[startNLMO[0]:endNLMO[0]]
     nao = file[startNAO[0]:endNAO[0]]
@@ -53,12 +54,72 @@ def singletFile(file):
 
 class nbo(object):
     def __init__(self,file):
-        lines = basicReadingFunctions.readlines(file)
-        if "alpha spin orbitals" or "beta spin orbitals" in lines:
-            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = tripletFile(lines)
+        self.lines = brf.readlines(file)
+        self.npa,self.badAts,self.badAtsF = nbo.chopNBOlocal(file)
+        if "alpha spin orbitals" or "beta spin orbitals" in self.lines:
+            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = tripletFile(self.lines)
+            self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
+            self.nboSumA = nbo.replacement(self.nboSumAlpha,self.badAts,self.badAtsF)
+            self.nboSumB = nbo.replacement(self.nboSumBeta,self.badAts,self.badAtsF)
+            self.nlmoA = nbo.replacement(self.nlmoAlpha,self.badAts,self.badAtsF)
+            self.nlmoB = nbo.replacement(self.nlmoBeta,self.badAts,self.badAtsF)
+            self.nao = nbo.replacement(self.naoAll,self.badAts,self.badAtsF)
+            self.naoA = nbo.replacement(self.naoAlpha,self.badAts,self.badAtsF)
+            self.naoB = nbo.replacement(self.naoBeta,self.badAts,self.badAtsF)
+            self.nboA = nbo.replacement(self.nboAlpha,self.badAts,self.badAtsF)
+            self.nboB = nbo.replacement(self.nboBeta,self.badAts,self.badAtsF)
+            self.cmoA = nbo.replacement(self.cmoAlpha,self.badAts,self.badAtsF)
+            self.cmoB = nbo.replacement(self.cmoBeta,self.badAts,self.badAtsF)
+            self.pertA = nbo.replacement(self.pertAlpha,self.badAts,self.badAtsF)
+            self.pertB = nbo.replacement(self.pertBeta,self.badAts,self.badAtsF)
         else:
-            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = singletFile(lines)
-        print(self.nboSumAlpha)
+            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = singletFile(self.lines)
+        
+
+    @staticmethod 
+    def chopNBOlocal(file):
+        lines = brf.readlines(file)
+        npaStart = brf.find("Summary of Natural Population Analysis:",lines)
+        pos1 = brf.findExact("-------------------------------------------------------------------------------",lines)
+        pos2 = brf.findExact("===============================================================================",lines)
+        pos11 = []
+        pos22 = []
+        for elem in pos1:
+            if npaStart[0]<elem<npaStart[1]:
+                pos11.append(elem)
+        for elem in pos2:
+            if npaStart[0]<elem<npaStart[1]:
+                pos22.append(elem)
+        npa = lines[pos11[0]+1:pos22[0]]
+        ats = []
+        badAts = []
+        badAtsF = []
+        for line in npa:
+            ats.append(line[0])
+        for atom in ats:
+            if not atom.isalpha:
+                position = ats.index(atom)
+                badAt.append(ats[position])
+        for elem in badAts:
+            character = ""
+            number = ""
+            for char in elem:
+                if char.isalpha():
+                    character += char
+                else:
+                    number += char
+            result = character + " " + number
+            badAtsF.append(result)
+        return (npa,badAts,badAtsF)
+
+    @staticmethod
+    def replacement(file,incorrect,correct):
+        result = file.copy()
+        for line in file:
+            for num in range(len(incorrect)):
+                if incorrect[num] in line:
+                    line.replace(incorrect[num],correct[num])
+        return result
         
 
 nbo("CN01_NN02_T_nbo.log")
