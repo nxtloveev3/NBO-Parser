@@ -2,7 +2,7 @@ from lib import basicReadingFunctions as brf
 import copy
 
 # These two function extract the information needed and seperate them to different seperate files
-# based on the origin file(weather it is a triplet or singlet)
+# based on the origin file(whether it is a triplet or singlet)
 def tripletFile(file):
     nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
@@ -56,7 +56,7 @@ class nbo(object):
     def __init__(self,file):
         lines = brf.readlines(file)
         triplet = False
-        for line in lines:
+        for line in lines: # Determine if the file is a singlet file or triplet file
             if "alpha spin orbitals" in line:
                 triplet = True
                 break
@@ -87,6 +87,8 @@ class nbo(object):
             self.cmo = nbo.replacement(self.cmo,self.badAts,self.badAtsF)
             self.pert = nbo.replacement(self.pert,self.badAts,self.badAtsF)
 
+    #This is a method locate the summary of natural population analysis and determine if there is 
+    #incorrect character due to the Gaussian generation and find the correct way. (Ex: C125 -> C 125)
     @staticmethod 
     def findNpa(file):
         lines = brf.readlines(file)
@@ -124,7 +126,8 @@ class nbo(object):
             result = character + " " + number
             badAtsF.append(result)
         return (npa,badAts,badAtsF)
-        
+    
+    #This method replace all the incorrect character and replace with correct one
     @staticmethod
     def replacement(file,incorrect,correct):
         result = file.copy()
