@@ -43,7 +43,7 @@ def singletFile(file):
     startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
     endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
-    endNLMO2 = brf.find("NBO analysis completed",file) 
+    endNLMO = brf.find("NBO analysis completed",file) 
     nboSum = file[nboSumStart[0]:startNLMO[0]]
     nlmo = file[startNLMO[0]:endNLMO[0]]
     nao = file[startNAO[0]:endNAO[0]]
@@ -54,10 +54,15 @@ def singletFile(file):
 
 class nbo(object):
     def __init__(self,file):
-        self.lines = brf.readlines(file)
-        self.npa,self.badAts,self.badAtsF = nbo.chopNBOlocal(file)
-        if "alpha spin orbitals" or "beta spin orbitals" in self.lines:
-            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = tripletFile(self.lines)
+        lines = brf.readlines(file)
+        triplet = False
+        for line in lines:
+            if "alpha spin orbitals" in line:
+                triplet = True
+                break
+        if triplet == True:
+            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = tripletFile(lines)
+            self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
             self.nboSumA = nbo.replacement(self.nboSumAlpha,self.badAts,self.badAtsF)
             self.nboSumB = nbo.replacement(self.nboSumBeta,self.badAts,self.badAtsF)
@@ -73,23 +78,31 @@ class nbo(object):
             self.pertA = nbo.replacement(self.pertAlpha,self.badAts,self.badAtsF)
             self.pertB = nbo.replacement(self.pertBeta,self.badAts,self.badAtsF)
         else:
-            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = singletFile(self.lines)
-        
+            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = singletFile(lines)
+            self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
+            self.nboSum = nbo.replacement(self.nboSum,self.badAts,self.badAtsF)
+            self.nlmo = nbo.replacement(self.nlmo,self.badAts,self.badAtsF)
+            self.nao = nbo.replacement(self.nao,self.badAts,self.badAtsF)
+            self.nbo = nbo.replacement(self.nbo,self.badAts,self.badAtsF)
+            self.cmo = nbo.replacement(self.cmo,self.badAts,self.badAtsF)
+            self.pert = nbo.replacement(self.pert,self.badAts,self.badAtsF)
 
     @staticmethod 
-    def chopNBOlocal(file):
+    def findNpa(file):
         lines = brf.readlines(file)
         npaStart = brf.find("Summary of Natural Population Analysis:",lines)
-        pos1 = brf.findExact("-------------------------------------------------------------------------------",lines)
-        pos2 = brf.findExact("===============================================================================",lines)
+        pos1 = brf.find("--------------------------------------------------------------------",lines)
+        pos2 = brf.find("====================================================================",lines)
         pos11 = []
         pos22 = []
         for elem in pos1:
-            if npaStart[0]<elem<npaStart[1]:
+            if elem > npaStart[0]:
                 pos11.append(elem)
+                break
         for elem in pos2:
-            if npaStart[0]<elem<npaStart[1]:
+            if elem > pos11[0]:
                 pos22.append(elem)
+                break
         npa = lines[pos11[0]+1:pos22[0]]
         ats = []
         badAts = []
@@ -111,15 +124,15 @@ class nbo(object):
             result = character + " " + number
             badAtsF.append(result)
         return (npa,badAts,badAtsF)
-
+        
     @staticmethod
     def replacement(file,incorrect,correct):
         result = file.copy()
-        for line in file:
+        for line in result:
             for num in range(len(incorrect)):
                 if incorrect[num] in line:
-                    line.replace(incorrect[num],correct[num])
+                    result.replace(incorrect[num],correct[num])
         return result
         
 
-nbo("CN01_NN02_T_nbo.log")
+nbo("CN01_NN01_T_nbo.log")
