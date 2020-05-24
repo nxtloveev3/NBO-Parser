@@ -1,3 +1,5 @@
+import string
+
 def readlines(file):
     f = open(file,'rb')
     lines = f.readlines()
@@ -19,9 +21,10 @@ def find(text,file):
 def findExact(text,file):
     result = []
     count = 0
-    for elem in file:
-        if text == elem:
-            result.append(count)
+    for line in file:
+        for elem in line.split():
+            if elem == text:
+                result.append(count)
         count += 1
     return result
 
@@ -50,4 +53,21 @@ def shortingLine(file):
     else:
         result = shortingLine(file[:-1])
         return result
+
+def finalClean(file):
+    result = []
+    for line in file:
+        newstring = ""
+        for elem in line:
+            newstring += elem + " "
+        newstring = newstring.replace(")", " ")
+        newstring = newstring.replace("(", " ")
+        newstring = newstring.replace("?", " ")
+        newstring = newstring.replace("-", " ", 1)
+        newLine = newstring.split()
+        result.append(newLine)
+    return result
+
+                
+
     

@@ -1,4 +1,4 @@
-from .basicReadingFunctions import readlines, find, replacingDigit, fixEnding
+from .basicReadingFunctions import readlines, find, findExact, replacingDigit, fixEnding, finalClean
 
 lines = readlines("CN01_NN13_S_nbo.log")
 nboSumStart = find("NATURAL BOND ORBITALS (Summary):",lines)
@@ -24,9 +24,9 @@ def parseNBO(nboSum):
     posCR = find("CR",tmpOrb)
     posLP = find("LP",tmpOrb)
     posLV = find("LV",tmpOrb)
-    posBD = find("BD",tmpOrb)
+    posBD = findExact("BD",tmpOrb)
     posBDS = find("BD*(",tmpOrb)
-    pos3C = find("3C",tmpOrb)
+    pos3C = findExact("3C",tmpOrb)
     pos3Cn = find("3Cn(",tmpOrb)
     pos3Cs = find("3C*(",tmpOrb)
     tabCR = fixEnding(posCR,tmpOrb)
@@ -37,5 +37,9 @@ def parseNBO(nboSum):
     tab3C = fixEnding(pos3C,tmpOrb)
     tab3Cn = fixEnding(pos3Cs,tmpOrb)
     tab3Cs = fixEnding(pos3Cn,tmpOrb)
+    tabCRF = finalClean(tabCR)
+    tabLVF = finalClean(tabLV)
+    tabBDF = finalClean(tabBD)
+    tabBDSF = finalClean(tabBDS)
 
 parseNBO(nboSum)
