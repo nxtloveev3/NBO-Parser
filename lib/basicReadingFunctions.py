@@ -64,6 +64,10 @@ def finalClean(file):
         newstring = newstring.replace("(", " ")
         newstring = newstring.replace("?", " ")
         newstring = newstring.replace("-", " ", 1)
+        newstring = newstring.replace("*[", " ")
+        newstring = newstring.replace("]", " ")
+        newstring = newstring.replace("=", " ")
+        newstring = newstring.replace(":", " ")
         newLine = newstring.split()
         result.append(newLine)
     return result

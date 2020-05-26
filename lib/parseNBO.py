@@ -41,5 +41,8 @@ def parseNBO(nboSum):
     tabLVF = finalClean(tabLV)
     tabBDF = finalClean(tabBD)
     tabBDSF = finalClean(tabBDS)
+    tab3CF
+    tab3CnF
+    tab3CsF = 
 
 parseNBO(nboSum)
