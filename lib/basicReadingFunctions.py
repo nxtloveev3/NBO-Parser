@@ -54,7 +54,7 @@ def shortingLine(file):
         result = shortingLine(file[:-1])
         return result
 
-def finalClean(file):
+def finalClean(file): # This part takes out all the nonessential component in the data table
     result = []
     for line in file:
         newstring = ""

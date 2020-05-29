@@ -1,11 +1,5 @@
 from .basicReadingFunctions import readlines, find, findExact, replacingDigit, fixEnding, finalClean
 
-lines = readlines("CN01_NN13_S_nbo.log")
-nboSumStart = find("NATURAL BOND ORBITALS (Summary):",lines)
-startNLMO = find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",lines)
-nboSum = lines[nboSumStart[0]:startNLMO[0]]
-
-
 def parseNBO(nboSum):
     c1 = [] #This part trying to find first element of each line in the file
     for line in nboSum:
@@ -41,8 +35,8 @@ def parseNBO(nboSum):
     tabLVF = finalClean(tabLV)
     tabBDF = finalClean(tabBD)
     tabBDSF = finalClean(tabBDS)
-    tab3CF
-    tab3CnF
-    tab3CsF = 
+    tab3CF = finalClean(tab3C)
+    tab3CnF = finalClean(tab3Cn)
+    tab3CsF = finalClean(tab3Cs)
+    return (tabCRF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF)
 
-parseNBO(nboSum)
