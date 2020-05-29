@@ -24,8 +24,8 @@ def tripletFile(file):
     naoAll = file[startNAO[0]:endNAO[0]]
     naoAlpha = file[startNAO[1]:endNAO[1]]
     naoBeta = file[startNAO[2]:endNAO[2]]
-    nboAlpha = file[startNBOalpha[0]:endNBO[0]]
-    nboBeta = file[startNBObeta[0]:endNBO[1]]
+    nboAlpha = file[startNBOalpha[0]:startPert[0]]
+    nboBeta = file[startNBObeta[0]:startPert[1]]
     cmoAlpha = file[startCMO[0]:endCMO[0]]
     cmoBeta = file[startCMO[1]:endCMO[1]]
     pertAlpha = file[startPert[0]:endPert[0]]
@@ -48,7 +48,7 @@ def singletFile(file):
     nlmo = file[startNLMO[0]:endNLMO[0]]
     nao = file[startNAO[0]:endNAO[0]]
     nbo = file[startNBOalpha[0]:endNBO[0]]
-    cmo = file[startCMO[0]:endCMO[0]]
+    cmo = file[startCMO[0]:startPert[0]]
     pert = file[startPert[0]:endPert[0]]
     return (nboSum,nlmo,nao,nbo,cmo,pert)
 
@@ -136,6 +136,3 @@ class nbo(object):
                 if incorrect[num] in line:
                     result.replace(incorrect[num],correct[num])
         return result
-        
-
-nbo("CN01_NN13_S_nbo.log")
