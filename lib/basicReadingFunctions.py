@@ -1,4 +1,6 @@
 import string
+import pandas as pd
+import numpy as np
 
 def readlines(file):
     f = open(file,'rb')
@@ -72,6 +74,15 @@ def finalClean(file): # This part takes out all the nonessential component in th
         result.append(newLine)
     return result
 
-                
+def toTable(file,titles):
+    columnTitle = titles.split(",")
+    totalCol = len(columnTitle) 
+    dataInColForm = [[]for i in range(totalCol)]
+    for line in file:
+        for i in range(totalCol):
+            dataInColForm[i].append(line[i])
+    dataTable = pd.DataFrame(np.array(dataInColForm),columns=columnTitle)
+    return dataTable
+
 
     
