@@ -1,6 +1,7 @@
 import string
 import pandas as pd
 import numpy as np
+import re
 
 def readlines(file):
     f = open(file,'rb')
@@ -24,7 +25,7 @@ def findExact(text,file):
     result = []
     count = 0
     for line in file:
-        for elem in line.split():
+        for elem in line:
             if elem == text:
                 result.append(count)
         count += 1
@@ -74,6 +75,15 @@ def finalClean(file): # This part takes out all the nonessential component in th
         result.append(newLine)
     return result
 
+def extractTab(file,pos):
+    result = []
+    for i in pos:
+        line = ""
+        for elem in file[i]:
+            line += elem + " "
+        result.append(line)
+    return result
+
 def toTable(file,titles):
     columnTitle = titles.split(",")
     totalCol = len(columnTitle) 
@@ -85,4 +95,17 @@ def toTable(file,titles):
     return dataTable
 
 
-    
+def namedRe(name, respec, before = 'none', after='require'): #function wrote by David Yaron
+    '''
+      wraps a regular expression in a block that gives it a name:
+          (?P<name> respec)
+      before and after are whitespace requirements before and after the match
+         'none'   : do not allow any whitespace
+         'allow' : accept but do not require whitespace
+         'require' : require whitespace
+    '''
+    ws = {'none'    : r'',
+          'allow'   : r'\s*',
+          'require' : r'\s+'}
+    res = ws[before] + "(?P<" + name + ">" + respec + ")" + ws[after]
+    return res
