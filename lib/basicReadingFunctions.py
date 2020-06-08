@@ -79,8 +79,12 @@ def extractTab(file,pos):
     result = []
     for i in pos:
         line = ""
-        for elem in file[i]:
-            line += elem + " "
+        if isinstance(file[i],list):
+            for elem in file[i]:
+                line += elem + " "
+        else:
+            for elem in file[i].split():
+                line += elem + " "
         result.append(line)
     return result
 
