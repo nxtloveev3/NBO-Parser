@@ -46,7 +46,6 @@ def parseCMON(file):
     cmonMOLineRe = re.compile(cmonMOLine)
 
     result = {}
-    unparsed = []
     currentMO = None
     for line in tmpFile:
         if cmonMOLineRe.search(line):
@@ -63,9 +62,73 @@ def parseCMON(file):
             correct = cmonBondLineRe.search(line).groupdict()
             result[currentMO]["wf"].append(correct)
         else:
-            unparsed.append(line)
             print("parseCMON: WARNING line not recognized "+ line)
 
     return result
-    
-    
+
+
+def parseCMO2(file):
+    loc = find("Molecular Orbital Atom-Atom Bonding Character",file)
+    cmo2 = file[loc[0]:]
+
+    ####Bonding Regex####
+    reFloat = r"-?\d+\.\d+"
+    atom = r"[A-Z][a-z]?\s*\d+"
+    cmo2BondLine = r"\b" + namedRe("Coeff", reFloat, before='allow')
+    cmo2BondLine += namedRe('Atom1', atom, after='none') + r"\-"
+    cmo2BondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\b"
+    cmo2BondLineRe = re.compile(cmo2BondLine)
+
+    ####NonBonding Regex####
+    cmo2NonBondLine = namedRe("Coeff", reFloat, before='allow')
+    cmo2NonBondLine += namedRe('Atom', atom, after='allow')
+    cmo2NonBondLineRe = re.compile(cmo2NonBondLine)
+
+    ####AntiBonding Regex####
+    cmo2AntiBondLine = namedRe("Coeff", reFloat, before='allow')
+    cmo2AntiBondLine += namedRe('Atom1', atom, after='none') + r"\-"
+    cmo2AntiBondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\*"
+    cmo2AntiBondLineRe = re.compile(cmo2AntiBondLine)
+
+    ####MOLineRegex####
+    cmo2MOLine = namedRe("MO", r"\d+", after="none") + r"\(" + r"\w+" + r"\)"
+    cmo2MOLineRe = re.compile(cmo2MOLine)
+
+    result={}
+    currentMO = None
+    for line in file:
+        if cmo2MOLineRe.match(line):
+            correct = cmo2MOLineRe.match(line).groupdict()
+            currentMO = correct["MO"]
+            result[currentMO] = dict()
+            result[currentMO]["Bonding"] = []
+            result[currentMO]["NonBonding"] = []
+            result[currentMO]["AntiBonding"] = []
+            treatline = line.split()
+            newline = ""
+            for elem in treatline[1:]:
+                newline += elem + " "
+            if cmo2BondLineRe.match(newline):
+                info = cmo2BondLineRe.match(newline).groupdict()
+                result[currentMO]["Bonding"].append(info)
+            elif cmo2AntiBondLineRe.match(newline):
+                info = cmo2AntiBondLineRe.match(newline).groupdict()
+                result[currentMO]["AntiBonding"].append(info)
+            elif cmo2NonBondLineRe.match(newline):
+                info = cmo2NonBondLineRe.match(newline).groupdict()
+                result[currentMO]["NonBonding"].append(info)
+        elif cmo2BondLineRe.match(line):
+            #print(line)
+            pass
+        elif cmo2NonBondLineRe.match(line):
+            #print(line)
+            pass
+        elif cmo2AntiBondLineRe.match(line):
+            #print(line)
+            pass
+        else:
+            #print("parseCMO2: WARNING line not recognized "+ line)
+            pass
+    print(result)
+    return result
+
