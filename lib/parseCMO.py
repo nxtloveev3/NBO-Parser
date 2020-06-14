@@ -90,13 +90,20 @@ def parseCMO2(file):
     cmo2AntiBondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\*"
     cmo2AntiBondLineRe = re.compile(cmo2AntiBondLine)
 
-    ####MOLineRegex####
+    ####MOLine Regex####
     cmo2MOLine = namedRe("MO", r"\d+", after="none") + r"\(" + r"\w+" + r"\)"
     cmo2MOLineRe = re.compile(cmo2MOLine)
 
+    ####TotalLine Regex####
+    cmo2TotalLine = namedRe("Bonding", reFloat, after='none') + r"\(" + r"\w" + r"\)"
+    cmo2TotalLine += namedRe("NonBonding", reFloat, before='require', after='none') + r"\(" + r"\w" + r"\)"
+    cmo2TotalLine += namedRe("AntiBonding", reFloat, before='require', after='none') +r"\(" + r"\w" + r"\)"
+    cmo2TotalLine += r"\s+\w+"
+    cmo2TotalLineRe = re.compile(cmo2TotalLine)
+
     result={}
     currentMO = None
-    for line in file:
+    for line in cmo2:
         if cmo2MOLineRe.match(line):
             correct = cmo2MOLineRe.match(line).groupdict()
             currentMO = correct["MO"]
@@ -104,6 +111,7 @@ def parseCMO2(file):
             result[currentMO]["Bonding"] = []
             result[currentMO]["NonBonding"] = []
             result[currentMO]["AntiBonding"] = []
+            result[currentMO]["Total"] = []
             treatline = line.split()
             newline = ""
             for elem in treatline[1:]:
@@ -111,24 +119,26 @@ def parseCMO2(file):
             if cmo2BondLineRe.match(newline):
                 info = cmo2BondLineRe.match(newline).groupdict()
                 result[currentMO]["Bonding"].append(info)
-            elif cmo2AntiBondLineRe.match(newline):
+            if cmo2AntiBondLineRe.match(newline):
                 info = cmo2AntiBondLineRe.match(newline).groupdict()
                 result[currentMO]["AntiBonding"].append(info)
-            elif cmo2NonBondLineRe.match(newline):
+            if cmo2NonBondLineRe.match(newline):
                 info = cmo2NonBondLineRe.match(newline).groupdict()
                 result[currentMO]["NonBonding"].append(info)
         elif cmo2BondLineRe.match(line):
-            #print(line)
-            pass
-        elif cmo2NonBondLineRe.match(line):
-            #print(line)
-            pass
+            info = cmo2BondLineRe.match(line).groupdict()
+            result[currentMO]["Bonding"].append(info)
         elif cmo2AntiBondLineRe.match(line):
-            #print(line)
-            pass
+            info = cmo2AntiBondLineRe.match(line).groupdict()
+            result[currentMO]["AntiBonding"].append(info)
+        elif cmo2NonBondLineRe.match(line):
+            info = cmo2NonBondLineRe.match(line).groupdict()
+            result[currentMO]["NonBonding"].append(info)
+        elif cmo2TotalLineRe.match(line):
+            info = cmo2TotalLineRe.match(line).groupdict()
+            result[currentMO]["Total"].append(info)
         else:
-            #print("parseCMO2: WARNING line not recognized "+ line)
-            pass
-    print(result)
+            print("parseCMO2: WARNING line not recognized "+ line)
+
     return result
 
