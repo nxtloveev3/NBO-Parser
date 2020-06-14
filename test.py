@@ -12,16 +12,15 @@ triplet = "CN01_NN01_T_nbo.log"
 #table = nbo(singlet)
 #cmo = table.cmo
 #nboSum = table.nboSum
-
-#table = nbo(triplet)
-#cmoAlpha = table.cmoA
-#cmoBeta = table.cmoB
+table = nbo(triplet)
+cmoAlpha = table.cmoA
+cmoBeta = table.cmoB
 #nboAlpha = table.nboA
 #nboBeta = table.nboB
 
 #tabCRF,tabLPF,tabLVF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF = parseNboSum(nboSum)
 #tabCRF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF = parseNBO(nboSum)
 
-
-
+cmo2 = parseCMO2(cmoAlpha)
+print(cmo2)
 
