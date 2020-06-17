@@ -3,6 +3,7 @@ from lib.parseNboSum import *
 from lib.parseNBO import*
 from lib.parseCMO import *
 from lib.basicReadingFunctions import *
+from lib.parsePert import*
 import pandas as pd
 import numpy as np
 
@@ -13,14 +14,16 @@ triplet = "CN01_NN01_T_nbo.log"
 #cmo = table.cmo
 #nboSum = table.nboSum
 table = nbo(triplet)
-cmoAlpha = table.cmoA
-cmoBeta = table.cmoB
+#cmoAlpha = table.cmoA
+#cmoBeta = table.cmoB
 #nboAlpha = table.nboA
 #nboBeta = table.nboB
+nboPertA = table.pertAlpha
 
 #tabCRF,tabLPF,tabLVF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF = parseNboSum(nboSum)
 #tabCRF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF = parseNBO(nboSum)
+#nboA = parseNBO(nboAlpha)
+#tableNBOA = pd.DataFrame(nboA)
 
-cmo2 = parseCMO2(cmoAlpha)
-print(cmo2)
-
+pertA = parsePert(nboPertA)
+print(pertA)
