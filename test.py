@@ -4,6 +4,7 @@ from lib.parseNBO import*
 from lib.parseCMO import *
 from lib.basicReadingFunctions import *
 from lib.parsePert import*
+from lib.parseNLMO import*
 import pandas as pd
 import numpy as np
 
@@ -18,12 +19,15 @@ table = nbo(triplet)
 #cmoBeta = table.cmoB
 #nboAlpha = table.nboA
 #nboBeta = table.nboB
-nboPertA = table.pertAlpha
+#nboPertA = table.pertAlpha
+nboNlmoA = table.nlmoAlpha
 
 #tabCRF,tabLPF,tabLVF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF = parseNboSum(nboSum)
 #tabCRF,tabBDF,tabBDSF,tab3CF,tab3CnF,tab3CsF = parseNBO(nboSum)
 #nboA = parseNBO(nboAlpha)
 #tableNBOA = pd.DataFrame(nboA)
 
-pertA = parsePert(nboPertA)
-print(pertA)
+#pertA = parsePert(nboPertA)
+
+nboNLMOA = parseNLMO(nboNlmoA)
+print(nboNLMOA["41"])
