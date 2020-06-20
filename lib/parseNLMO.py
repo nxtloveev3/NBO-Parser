@@ -32,12 +32,23 @@ def parseNLMO(file):
     nlmoBondLine += namedRe("Atom2", atom,before='allow',after='allow')
     nlmoBondLineRe = re.compile(nlmoBondLine)
 
-    nlmoHybridsLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
-    nlmoHybridsLine += namedRe("Atom", atom,before='allow')
-    nlmoHybridsLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
-    nlmoHybridsLine += r"\s*" + r"([p]\s*\-?\d+\.\d+\s*\()?" + namedRe("pOrbit", r"(d+\.\d+)?",before='allow',after='none') + r"(\))?"
-    nlmoHybridsLine += r"\s*" + r"([d]\s*\-?\d+\.\d+\s*\()?" + namedRe("dOrbit", r"(d+\.\d+)?",before='allow',after='none') + r"(\))?"
-    nlmoHybridsLineRe = re.compile(nlmoHybridsLine)
+    nlmoHybridSLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
+    nlmoHybridSLine += namedRe("Atom", atom,before='allow')
+    nlmoHybridSLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
+    nlmoHybridSLineRe = re.compile(nlmoHybridSLine)
+    
+    nlmoHybridPLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
+    nlmoHybridPLine += namedRe("Atom", atom,before='allow')
+    nlmoHybridPLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
+    nlmoHybridPLine += r"\s*" + r"[p]\s*\-?\d+\.\d+\s*\(" + namedRe("pOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
+    nlmoHybridPLineRe = re.compile(nlmoHybridPLine)
+    
+    nlmoHybridDLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
+    nlmoHybridDLine += namedRe("Atom", atom,before='allow')
+    nlmoHybridDLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
+    nlmoHybridDLine += r"\s*" + r"[p]\s*\-?\d+\.\d+\s*\(" + namedRe("pOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
+    nlmoHybridDLine += r"\s*" + r"[d]\s*\-?\d+\.\d+\s*\(" + namedRe("dOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
+    nlmoHybridDLineRe = re.compile(nlmoHybridDLine)
 
     result = {}
     currentNLMO = None
@@ -62,15 +73,26 @@ def parseNLMO(file):
             result[currentNLMO]["Index"] = int(info["Index"])
             result[currentNLMO]["Atom"] = info["Atom"]
             result[currentNLMO]["Atom2"] = info["Atom2"]
-            result[currentNLMO]["HybridContribution"] = []
-        elif nlmoHybridsLineRe.search(line):
-            info = nlmoHybridsLineRe.match(line).groupdict()
+            result[currentNLMO]["HybridContribution"] = [] 
+        elif nlmoHybridDLineRe.match(line):
+            print("here")
+            info = nlmoHybridDLineRe.match(line).groupdict()
             info["Percent"] = float(info["Percent"])
             info["sOrbit"] = float(info["sOrbit"])
-            if not info["pOrbit"].isspace:
-                info["pOrbit"] = float(info["pOrbit"])
-            if not info["dOrbit"].isspace:
-                info["dOrbit"] = float(["dOrbit"])
+            info["pOrbit"] = float(info["pOrbit"])
+            info["dOrbit"] = float(info["dOrbit"])
+            result[currentNLMO]["HybridContribution"].append(info)  
+        elif nlmoHybridPLineRe.match(line):
+            print("here1")
+            info = nlmoHybridPLineRe.match(line).groupdict()
+            info["Percent"] = float(info["Percent"])
+            info["sOrbit"] = float(info["sOrbit"])
+            info["pOrbit"] = float(info["pOrbit"])
+            result[currentNLMO]["HybridContribution"].append(info) 
+        elif nlmoHybridSLineRe.match(line):
+            info = nlmoHybridSLineRe.match(line).groupdict()
+            info["Percent"] = float(info["Percent"])
+            info["sOrbit"] = float(info["sOrbit"])
             result[currentNLMO]["HybridContribution"].append(info)  
         else:
             print("Ignoring line", line)
