@@ -9,31 +9,33 @@ def tripletFile(file):
     endNAO = brf.find("Summary of Natural Population Analysis:",file)
     startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
     startNBObeta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
+    nboSumEnd = brf.find("$END",file)
     endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
     startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
     endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
     startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
     endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
-    endNLMO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
+    endNLMO = brf.find("*******         Beta  spin orbitals         *******",file)
     endNLMO2 = brf.find("NBO analysis completed",file) 
-    nboSumAlpha = file[nboSumStart[0]:startNLMO[0]]
-    nboSumBeta = file[nboSumStart[1]:startNLMO[1]]
+    nboSumAlpha = file[nboSumStart[0]:nboSumEnd[0]]
+    nboSumBeta = file[nboSumStart[1]:nboSumEnd[1]]
     nlmoAlpha = file[startNLMO[0]:endNLMO[0]]
     nlmoBeta = file[startNLMO[1]:endNLMO2[0]]
     naoAll = file[startNAO[0]:endNAO[0]]
     naoAlpha = file[startNAO[1]:endNAO[1]]
     naoBeta = file[startNAO[2]:endNAO[2]]
-    nboAlpha = file[startNBOalpha[0]:startPert[0]]
-    nboBeta = file[startNBObeta[0]:startPert[1]]
-    cmoAlpha = file[startCMO[0]:endCMO[0]]
-    cmoBeta = file[startCMO[1]:endCMO[1]]
+    nboAlpha = file[startNBOalpha[0]:endNBO[0]]
+    nboBeta = file[startNBObeta[0]:endNBO[1]]
+    cmoAlpha = file[startCMO[0]:startPert[0]]
+    cmoBeta = file[startCMO[1]:startPert[1]]
     pertAlpha = file[startPert[0]:endPert[0]]
     pertBeta = file[startPert[1]:endPert[1]]
     return (nboSumAlpha,nboSumBeta,nlmoAlpha,nlmoBeta,naoAll,naoAlpha,naoBeta,nboAlpha,nboBeta,cmoAlpha,cmoBeta,pertAlpha,pertBeta)    
     
 def singletFile(file):
     nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+    nboSumEnd = brf.find("$END",file)
     startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
     endNAO = brf.find("Summary of Natural Population Analysis:",file)
     startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS",file)
@@ -44,11 +46,11 @@ def singletFile(file):
     endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
     endNLMO = brf.find("NBO analysis completed",file) 
-    nboSum = file[nboSumStart[0]:startNLMO[0]]
+    nboSum = file[nboSumStart[0]:nboSumEnd[0]]
     nlmo = file[startNLMO[0]:endNLMO[0]]
     nao = file[startNAO[0]:endNAO[0]]
     nbo = file[startNBOalpha[0]:endNBO[0]]
-    cmo = file[startCMO[0]:startPert[0]]
+    cmo = file[startCMO[0]:endCMO[0]]
     pert = file[startPert[0]:endPert[0]]
     return (nboSum,nlmo,nao,nbo,cmo,pert)
 
