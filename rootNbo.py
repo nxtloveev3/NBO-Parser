@@ -3,13 +3,13 @@ import copy
 
 # These two function extract the information needed and seperate them to different seperate files
 # based on the origin file(whether it is a triplet or singlet)
-def tripletFile(file):
+def unrestricted(file):
     nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
     endNAO = brf.find("Summary of Natural Population Analysis:",file)
     startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
     startNBObeta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
-    nboSumEnd = brf.find("$END",file)
+    nboSumEnd = brf.find("Total Lewis",file)
     endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
     startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
     endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
@@ -18,8 +18,8 @@ def tripletFile(file):
     startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
     endNLMO = brf.find("*******         Beta  spin orbitals         *******",file)
     endNLMO2 = brf.find("NBO analysis completed",file) 
-    nboSumAlpha = file[nboSumStart[0]:nboSumEnd[0]]
-    nboSumBeta = file[nboSumStart[1]:nboSumEnd[1]]
+    nboSumAlpha = file[nboSumStart[0]:nboSumEnd[len(nboSumEnd)-3]]
+    nboSumBeta = file[nboSumStart[1]:nboSumEnd[len(nboSumEnd)-1]]
     nlmoAlpha = file[startNLMO[0]:endNLMO[0]]
     nlmoBeta = file[startNLMO[1]:endNLMO2[0]]
     naoAll = file[startNAO[0]:endNAO[0]]
@@ -33,7 +33,7 @@ def tripletFile(file):
     pertBeta = file[startPert[1]:endPert[1]]
     return (nboSumAlpha,nboSumBeta,nlmoAlpha,nlmoBeta,naoAll,naoAlpha,naoBeta,nboAlpha,nboBeta,cmoAlpha,cmoBeta,pertAlpha,pertBeta)    
     
-def singletFile(file):
+def restricted(file):
     nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     nboSumEnd = brf.find("$END",file)
     startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
@@ -63,7 +63,7 @@ class nbo(object):
                 triplet = True
                 break
         if triplet == True:
-            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = tripletFile(lines)
+            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = unrestricted(lines)
             self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
             self.nboSumA = nbo.replacement(self.nboSumAlpha,self.badAts,self.badAtsF)
@@ -80,7 +80,7 @@ class nbo(object):
             self.pertA = nbo.replacement(self.pertAlpha,self.badAts,self.badAtsF)
             self.pertB = nbo.replacement(self.pertBeta,self.badAts,self.badAtsF)
         else:
-            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = singletFile(lines)
+            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = restricted(lines)
             self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
             self.nboSum = nbo.replacement(self.nboSum,self.badAts,self.badAtsF)
             self.nlmo = nbo.replacement(self.nlmo,self.badAts,self.badAtsF)
