@@ -5,7 +5,7 @@ Created on Tue Jun  2 15:56:54 2020
 
 @author: yaron
 """
-from lib import basicReadingFunctions as brf
+from .lib import basicReadingFunctions as brf
 import re
 
 singlet = "CN01_NN13_S_nbo.log"
