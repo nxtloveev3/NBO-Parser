@@ -1,7 +1,7 @@
 import re
 from .basicReadingFunctions import namedRe, find, findExact, extractTab, replacingDigit
 
-def parseNAO(file):
+def parseNAO(file, verbose=True):
     reFloat = r"-?\d+\.\d+"
     lang = r"[a-z][a-z]?\d*[a-z]?\d*"
     atom = r"[A-Z][a-z]?"
@@ -39,5 +39,6 @@ def parseNAO(file):
             newLine["Energy"] = float(energy)
             result.append(newLine)
         else:
-            print("Ignoring this line:", line)
+            if verbose:
+                print("Ignoring this line:", line)
     return result
