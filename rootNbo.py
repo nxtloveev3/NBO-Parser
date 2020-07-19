@@ -1,7 +1,7 @@
 from .lib import basicReadingFunctions as brf
 import copy
 
-# These two function extract the information needed and seperate them to different seperate files
+# These two function extract the information needed and seperate them into different seperate files
 # based on the origin file(whether it is a triplet or singlet)
 def unrestricted(file):
     nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
@@ -58,7 +58,7 @@ class nbo(object):
     def __init__(self,file):
         lines = brf.readlines(file)
         triplet = False
-        for line in lines: # Determine if the file is a singlet file or triplet file
+        for line in lines: # Determines if the file is a singlet file or triplet file
             if "alpha spin orbitals" in line:
                 triplet = True
                 break
@@ -142,7 +142,7 @@ class nbo(object):
             result.append(new)
         return result
     
-    #This method replaces all the incorrect character and replace with correct one
+    #This method replaces all the incorrect characters with correct ones
     @staticmethod
     def replacement(file,incorrect,correct):
         result = file.copy()
