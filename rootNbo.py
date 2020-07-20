@@ -131,10 +131,15 @@ class nbo(object):
     
     #This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
     def parseNPA(self) -> list:
+        def helper(line):
+            element = ''.join([i for i in line[0] if i.isalpha()])
+            return [element, line[0].replace(element, '')] + line[1:]
         columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
         text = [i.split() for i in self.npa]
         result = []
         for line in text:
+            if len(line) != 7:
+                line = helper(line)
             new = {'Atom': line[0]}
             new['No'] = int(line[1])
             for i in range(2, 7):
