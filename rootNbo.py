@@ -12,7 +12,7 @@ def unrestricted(file):
     nboSumEnd = brf.find("Total Lewis",file)
     endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
     startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
-    endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
+    # endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
     startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
     endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
     startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
@@ -57,12 +57,12 @@ def restricted(file):
 class nbo(object):
     def __init__(self,file):
         lines = brf.readlines(file)
-        triplet = False
+        self.triplet = False
         for line in lines: # Determines if the file is a singlet file or triplet file
             if "alpha spin orbitals" in line:
-                triplet = True
+                self.triplet = True
                 break
-        if triplet == True:
+        if self.triplet == True:
             self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = unrestricted(lines)
             self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
@@ -116,7 +116,7 @@ class nbo(object):
         for atom in ats:
             if not atom.isalpha:
                 position = ats.index(atom)
-                badAt.append(ats[position])
+                badAts.append(ats[position])
         for elem in badAts:
             character = ""
             number = ""
@@ -131,18 +131,23 @@ class nbo(object):
     
     #This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
     def parseNPA(self) -> list:
+        columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
+        if not self.triplet:
+            length = 7
+        else:
+            length = 8 
+            columns.append('Natural Spin Density')
         def helper(line):
             element = ''.join([i for i in line[0] if i.isalpha()])
             return [element, line[0].replace(element, '')] + line[1:]
-        columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
         text = [i.split() for i in self.npa]
         result = []
         for line in text:
-            if len(line) != 7:
+            if len(line) != length:
                 line = helper(line)
             new = {'Atom': line[0]}
             new['No'] = int(line[1])
-            for i in range(2, 7):
+            for i in range(2, length):
                 new[columns[i]] = float(line[i])
             result.append(new)
         return result
