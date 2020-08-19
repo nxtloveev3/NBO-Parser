@@ -1,7 +1,7 @@
 from .basicReadingFunctions import namedRe, find
 import re
 
-def parseNBO(file):
+def parseNBO(file, verbose=False):
     start = find("(Occupancy)   Bond orbital / Coefficients / Hybrids", file)
     nbo = file[start[0]:]
     tmpFile = []
@@ -38,23 +38,38 @@ def parseNBO(file):
     nboBondHybridsLine = namedRe("Hybrids", hybrids, before='allow', after='allow')
     nboBondHybridsLineRe = re.compile(nboBondHybridsLine)
 
+    
+    def fix_badatom(atom):
+        if ' ' in atom:
+            return atom.split()
+        a = ''
+        i = ''
+        for chr_ in atom:
+            if chr_.isalpha():
+                a += chr_
+            else:
+                i += chr_
+        return [a, i]
+        
     result = {}
     currentIndex = None
     for line in tmpFile:
         if nboNonBondLineRe.match(line):
             info = nboNonBondLineRe.match(line).groupdict()
             currentIndex = info["Index"]
-            print(currentIndex)
+            if verbose:
+                print(currentIndex)
             occupancy = info["Occupancy"]
             atomictype = info["Type"]
             bondOrbital = info["BondOrbitals"]
-            atom = info["Atom"]
+            atom = fix_badatom(info["Atom"])
             hybrids = info["Hybrids"]
             result[currentIndex] = dict()
             result[currentIndex]["Occupancy"] = float(occupancy)
             result[currentIndex]["Type"] = atomictype
             result[currentIndex]["BondOrbital"] = int(bondOrbital)
-            result[currentIndex]["Atom"] = atom
+            result[currentIndex]["Atom"] = atom[0]
+            result[currentIndex]["Atom_ind"] = int(atom[1])
             result[currentIndex]["Hybrids"] = hybrids
         elif nboBondLineRe.match(line):
             info = nboBondLineRe.match(line).groupdict()
@@ -62,21 +77,21 @@ def parseNBO(file):
             occupancy = info["Occupancy"]
             atomictype = info["Type"]
             bondOrbital = info["BondOrbitals"]
-            atom1 = info["Atom1"]
-            atom2 = info["Atom2"]
+            atom1 = fix_badatom(info["Atom1"])
+            atom2 = fix_badatom(info["Atom2"])
             result[currentIndex] = dict()
             result[currentIndex]["Occupancy"] = float(occupancy)
             result[currentIndex]["Type"] = atomictype
             result[currentIndex]["BondOrbital"] = int(bondOrbital)
-            result[currentIndex]["Atom1"] = atom1
-            result[currentIndex]["Atom2"] = atom2
+            result[currentIndex]["Atom1"] = atom1[0]
+            result[currentIndex]["Atom1_ind"] = int(atom1[1])
+            result[currentIndex]["Atom2"] = atom2[0]
+            result[currentIndex]["Atom2_ind"] = int(atom2[1])
         elif nboBondHybridsLineRe.search(line):
             info = nboBondHybridsLineRe.search(line).groupdict()
             hybrids = info["Hybrids"]
             result[currentIndex]["Hybrids"] = hybrids
         else:
-            print("Ignoring this line:", line)
+            if verbose:
+                print("Ignoring this line:", line)
     return result
-
-
-   
