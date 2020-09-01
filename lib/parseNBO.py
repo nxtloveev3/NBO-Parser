@@ -1,15 +1,9 @@
-from .basicReadingFunctions import namedRe, find
+from .basicReadingFunctions import namedRe, find, fix_badatom
 import re
 
-def parseNBO(file, verbose=False):
-    start = find("(Occupancy)   Bond orbital / Coefficients / Hybrids", file)
-    nbo = file[start[0]:]
-    tmpFile = []
-    for line in nbo:
-        newline = line
-        if "BD*" in line:
-            newline = line.replace("BD*","ABB") #ABB stand for antibonding bonds
-        tmpFile.append(newline)
+def parseNBO(text, verbose=False):
+    start = text.index("(Occupancy)   Bond orbital / Coefficients / Hybrids")
+    text = text[start:]
     
     ####NBO NonBonding Regex####
     reFloat = r"-?\d+\.\d+"
@@ -34,63 +28,51 @@ def parseNBO(file, verbose=False):
     nboBondLine += namedRe("Atom2", atom, before='allow', after='allow')
     nboBondLineRe = re.compile(nboBondLine)
 
-    ####Hybrids(bond) Regex####
-    nboBondHybridsLine = namedRe("Hybrids", hybrids, before='allow', after='allow')
-    nboBondHybridsLineRe = re.compile(nboBondHybridsLine)
-
-    
-    def fix_badatom(atom):
-        if ' ' in atom:
-            return atom.split()
-        a = ''
-        i = ''
-        for chr_ in atom:
-            if chr_.isalpha():
-                a += chr_
-            else:
-                i += chr_
-        return [a, i]
+    ####Coeff of NAO Regex####
+    coeffN = namedRe('coeff', r'0.\d\d*', before='allow', after='none')
+    coeffN += r'\*'
+    coeffN += namedRe('Atom', r'[A-Z][a-z]*', before='require', after='allow')
+    coeffN += namedRe('Loc', r'\d\d*', before='allow', after='allow')
+    coeffNRe = re.compile(coeffN)
         
     result = {}
     currentIndex = None
-    for line in tmpFile:
+    for line in text:
+        if "BD*" in line:
+            line = line.replace("BD*", "ABB") #ABB stand for antibonding bonds
         if nboNonBondLineRe.match(line):
             info = nboNonBondLineRe.match(line).groupdict()
-            currentIndex = info["Index"]
+            currentIndex = int(info["Index"])
             if verbose:
                 print(currentIndex)
-            occupancy = info["Occupancy"]
-            atomictype = info["Type"]
-            bondOrbital = info["BondOrbitals"]
             atom = fix_badatom(info["Atom"])
-            hybrids = info["Hybrids"]
             result[currentIndex] = dict()
-            result[currentIndex]["Occupancy"] = float(occupancy)
-            result[currentIndex]["Type"] = atomictype
-            result[currentIndex]["BondOrbital"] = int(bondOrbital)
+            result[currentIndex]["Occupancy"] = float(info["Occupancy"])
+            result[currentIndex]["Type"] = info["Type"]
+            result[currentIndex]["BondOrbital"] = int(info["BondOrbitals"])
             result[currentIndex]["Atom"] = atom[0]
-            result[currentIndex]["Atom_ind"] = int(atom[1])
-            result[currentIndex]["Hybrids"] = hybrids
+            result[currentIndex]["Loc"] = int(atom[1])
+            result[currentIndex]["Hybrids"] = info["Hybrids"]
         elif nboBondLineRe.match(line):
             info = nboBondLineRe.match(line).groupdict()
-            currentIndex = info["Index"]
-            occupancy = info["Occupancy"]
-            atomictype = info["Type"]
-            bondOrbital = info["BondOrbitals"]
+            currentIndex = int(info["Index"])
             atom1 = fix_badatom(info["Atom1"])
             atom2 = fix_badatom(info["Atom2"])
             result[currentIndex] = dict()
-            result[currentIndex]["Occupancy"] = float(occupancy)
-            result[currentIndex]["Type"] = atomictype
-            result[currentIndex]["BondOrbital"] = int(bondOrbital)
+            result[currentIndex]["Occupancy"] = float(info["Occupancy"])
+            result[currentIndex]["Type"] = info["Type"]
+            result[currentIndex]["BondOrbital"] = int(info["BondOrbitals"])
             result[currentIndex]["Atom1"] = atom1[0]
-            result[currentIndex]["Atom1_ind"] = int(atom1[1])
+            result[currentIndex]["Loc1"] = int(atom1[1])
             result[currentIndex]["Atom2"] = atom2[0]
-            result[currentIndex]["Atom2_ind"] = int(atom2[1])
-        elif nboBondHybridsLineRe.search(line):
-            info = nboBondHybridsLineRe.search(line).groupdict()
-            hybrids = info["Hybrids"]
-            result[currentIndex]["Hybrids"] = hybrids
+            result[currentIndex]["Loc2"] = int(atom2[1])
+        elif coeffNRe.search(line):
+            info = coeffNRe.search(line).groupdict()
+            loc = int(info['Loc'])
+            if loc == result[currentIndex]["Loc1"] and "Coeff1" not in result[currentIndex]:
+                result[currentIndex]["Coeff1"] = float(info['coeff'])
+            elif loc == result[currentIndex]["Loc2"] and "Coeff2" not in result[currentIndex]:
+                result[currentIndex]["Coeff2"] = float(info['coeff'])
         else:
             if verbose:
                 print("Ignoring this line:", line)

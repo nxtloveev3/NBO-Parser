@@ -1,7 +1,7 @@
 from .basicReadingFunctions import namedRe, find
 import re
 
-def parsePert(file):
+def parsePert(file, verbose=False):
     tmpFile = []
     for line in file:
         newline = line
@@ -31,8 +31,8 @@ def parsePert(file):
     for line in tmpFile:
         if pertLineRe.search(line):
             number += 1
-            count = str(number)
-            result[count] = dict()
+            # count = str(number)
+            result[number] = dict()
             info = pertLineRe.search(line).groupdict()
             donnor = dict()
             nbo1 = info["NBO1"]
@@ -55,13 +55,14 @@ def parsePert(file):
             e = info["E"]
             ee = info["EE"]
             f = info["F"]
-            result[count]["DonorNBO"] = donnor
-            result[count]["AcceptorNBO"] = acceptor
-            result[count]["E"] = float(e)
-            result[count]["EE"] = float(ee)
-            result[count]["F"] = float(f)
+            result[number]["DonorNBO"] = donnor
+            result[number]["AcceptorNBO"] = acceptor
+            result[number]["E"] = float(e)
+            result[number]["EE"] = float(ee)
+            result[number]["F"] = float(f)
         else:
-            print("Ignoring line:", line)
+            if verbose:
+                print("Ignoring line:", line)
     return result
 
 

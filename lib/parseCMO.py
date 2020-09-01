@@ -1,16 +1,25 @@
 import re
-from .basicReadingFunctions import namedRe, find, findExact, extractTab
+from .basicReadingFunctions import namedRe, find, findExact, extractTab, fix_badatom
 import pandas as pd
 
-def parseCMON(file):
-    loc = find("Molecular Orbital Atom-Atom Bonding Character",file)
-    cmon = file[:loc[0]]
-    tmpFile = []
-    for line in cmon:
-        newline = line
-        if "BD*" in line:
-            newline = line.replace("BD*","ABB") #ABB stand for antibonding bonds
-        tmpFile.append(newline)
+def fix_info(info):
+    for key in list(info.keys()):
+        if key in ['NBO', 'Index', 'Loc', 'Loc1', 'Loc2']:
+            info[key] = int(info[key])
+        elif key in ['Coef', 'Coeff', 'Bonding', 'NonBonding', 'AntiBonding']:
+            info[key] = float(info[key])
+        elif key[:4]=='Atom' and 'Loc'+key[4:] not in info:
+            atom, i = fix_badatom(info[key])
+            info[key] = atom
+            info['Loc'+key[4:]] = int(i)
+
+def parseCMON(text, verbose=False):
+    # loc = find("Molecular Orbital Atom-Atom Bonding Character",file)
+    try:
+        loc = text.index("Molecular Orbital Atom-Atom Bonding Character")
+        text = text[:loc]
+    except:
+        pass
 
     ####NonBond Regex####
     reFloat = r"-?\d+\.\d+"
@@ -39,7 +48,7 @@ def parseCMON(file):
     ####MO Regex####
     cmonMOLine = namedRe("Label1", r"[M][O]", before='allow')
     cmonMOLine += namedRe("MO", r"\d+")
-    cmonMOLine += r"\(" + namedRe("Label2", r"\w+", after='none') + r"\)\:"
+    cmonMOLine += r"\(" + namedRe("Type", r"\w+", after='none') + r"\)\:"
     cmonMOLine += namedRe("Label3", r"\w+\s+\w+", before="require")
     cmonMOLine += r"\=" + namedRe("Energy", reFloat, before="require")
     cmonMOLine += namedRe("Unit", r"[a]\.[u]\.",after='allow')
@@ -47,29 +56,39 @@ def parseCMON(file):
 
     result = {}
     currentMO = None
-    for line in tmpFile:
+    HOMO = 0
+    for line in text:
+        if "BD*" in line:
+            line = line.replace("BD*", "ABB") #ABB stands for antibonding 
         if cmonMOLineRe.search(line):
             correct = cmonMOLineRe.search(line).groupdict()
-            currentMO = correct["MO"]
-            energy = correct["Energy"]
+            currentMO = int(correct["MO"])
+            energy = float(correct["Energy"])
+            typ = correct['Type']
+            if HOMO == 0 and typ == 'vir':
+                HOMO = currentMO - 1
             result[currentMO] = dict()
             result[currentMO]["Energy"] = energy
+            result[currentMO]["Type"] = typ
             result[currentMO]["wf"] = []
-        elif cmonLineRe.search(line):
-            correct = cmonLineRe.search(line).groupdict()
-            result[currentMO]["wf"].append(correct)
         elif cmonBondLineRe.search(line):
             correct = cmonBondLineRe.search(line).groupdict()
+            fix_info(correct)
+            result[currentMO]["wf"].append(correct)
+        elif cmonLineRe.search(line):
+            correct = cmonLineRe.search(line).groupdict()
+            fix_info(correct)
             result[currentMO]["wf"].append(correct)
         else:
-            print("parseCMON: WARNING line not recognized "+ line)
+            if verbose:
+                print("parseCMON WARNING: line not recognized "+ line)
 
-    return result
+    return result, HOMO
 
 
-def parseCMO2(file):
-    loc = find("Molecular Orbital Atom-Atom Bonding Character",file)
-    cmo2 = file[loc[0]:]
+def parseCMO2(text, verbose=False):
+    loc = text.index("Molecular Orbital Atom-Atom Bonding Character")
+    text = text[loc:]
 
     ####Bonding Regex####
     reFloat = r"-?\d+\.\d+"
@@ -91,7 +110,7 @@ def parseCMO2(file):
     cmo2AntiBondLineRe = re.compile(cmo2AntiBondLine)
 
     ####MOLine Regex####
-    cmo2MOLine = namedRe("MO", r"\d+", after="none") + r"\(" + r"\w+" + r"\)"
+    cmo2MOLine = namedRe("MO", r"\d+", after="none") + namedRe("Type", r"\(" + r"\w+" + r"\)", after="none")
     cmo2MOLineRe = re.compile(cmo2MOLine)
 
     ####TotalLine Regex####
@@ -103,10 +122,14 @@ def parseCMO2(file):
 
     result={}
     currentMO = None
-    for line in cmo2:
+    SOMO = 0
+    for line in text:
         if cmo2MOLineRe.match(line):
             correct = cmo2MOLineRe.match(line).groupdict()
-            currentMO = correct["MO"]
+            currentMO = int(correct["MO"])
+            typ = correct['Type']
+            if SOMO == 0 and typ == '(v)':
+                SOMO = currentMO - 1
             result[currentMO] = dict()
             result[currentMO]["Bonding"] = []
             result[currentMO]["NonBonding"] = []
@@ -118,27 +141,34 @@ def parseCMO2(file):
                 newline += elem + " "
             if cmo2BondLineRe.match(newline):
                 info = cmo2BondLineRe.match(newline).groupdict()
+                fix_info(info)
                 result[currentMO]["Bonding"].append(info)
             if cmo2AntiBondLineRe.match(newline):
                 info = cmo2AntiBondLineRe.match(newline).groupdict()
+                fix_info(info)
                 result[currentMO]["AntiBonding"].append(info)
             if cmo2NonBondLineRe.match(newline):
                 info = cmo2NonBondLineRe.match(newline).groupdict()
+                fix_info(info)
                 result[currentMO]["NonBonding"].append(info)
         elif cmo2BondLineRe.match(line):
             info = cmo2BondLineRe.match(line).groupdict()
+            fix_info(info)
             result[currentMO]["Bonding"].append(info)
         elif cmo2AntiBondLineRe.match(line):
             info = cmo2AntiBondLineRe.match(line).groupdict()
+            fix_info(info)
             result[currentMO]["AntiBonding"].append(info)
         elif cmo2NonBondLineRe.match(line):
             info = cmo2NonBondLineRe.match(line).groupdict()
+            fix_info(info)
             result[currentMO]["NonBonding"].append(info)
         elif cmo2TotalLineRe.match(line):
             info = cmo2TotalLineRe.match(line).groupdict()
+            fix_info(info)
             result[currentMO]["Total"].append(info)
         else:
-            print("parseCMO2: WARNING line not recognized "+ line)
+            if verbose:
+                print("parseCMO2 WARNING: line not recognized "+ line)
 
-    return result
-
+    return result, SOMO

@@ -70,8 +70,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del posCR, tabCR, tabCRF
         try:
             tableCRF = helper(tableCRF, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
-            tables['CR'] = tableCRF.copy()
-            del tableCRF
+            tables['CR'] = tableCRF
         except:
             if verbose:
                 print("TableCRF is empty or in wrong format.")
@@ -84,8 +83,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del posLP, tabLP, tabLPF
         try:
             tableLPF = helper(tableLPF, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
-            tables['LP'] = tableLPF.copy()
-            del tableLPF
+            tables['LP'] = tableLPF
         except:
             if verbose:
                 print("TableLPF is empty or in wrong format.")
@@ -98,8 +96,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del posLV, tabLV, tabLVF
         try:
             tableLVF = helper(tableLVF, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
-            tables['LV'] = tableLVF.copy()
-            del tableLVF
+            tables['LV'] = tableLVF
         except:
             if verbose:
                 print("TableLVF is empty or in wrong format.")
@@ -112,8 +109,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del posBD, tabBD, tabBDF
         try:
             tableBDF = helper(tableBDF, ['NBO', 'AO','Loc1','Loc2'], ['Type','Atom1','Atom2'], ['Occupancy','Energy'])
-            tables['BD'] = tableBDF.copy()
-            del tableBDF
+            tables['BD'] = tableBDF
         except:
             if verbose:
                 print("TableBDF is empty or in wrong format.")
@@ -126,8 +122,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del posABB, tabABB, tabABBF
         try:
             tableABBF = helper(tableABBF, ['NBO', 'AO','Loc1','Loc2'], ['Type','Atom1','Atom2'], ['Occupancy','Energy'])
-            tables['ABB'] = tableABBF.copy()
-            del tableABBF
+            tables['ABB'] = tableABBF
         except:
             if verbose:
                 print("TableBDSF is empty or in wrong format.")
@@ -140,8 +135,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del pos3C, tab3C, tab3CF
         try:
             table3CF = helper(table3CF, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
-            tables['3C'] = table3CF.copy()
-            del table3CF
+            tables['3C'] = table3CF
         except:
             if verbose:
                 print("Table3CF is empty or in wrong format.")
@@ -168,8 +162,7 @@ def parseNboSum(file, verbose=False, selected_tabs=["CR", "LP", "LV", "BD", "ABB
         del pos3Cs, tab3Cs, tab3CsF
         try:
             table3CsF = helper(table3CsF, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
-            tables['3Cs'] = table3CsF.copy()
-            del table3CsF
+            tables['3Cs'] = table3CsF
         except:
             if verbose:
                 print("Table3CsF is empty or in wrong format.")

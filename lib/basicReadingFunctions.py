@@ -99,7 +99,7 @@ def toTable(file,titles):
     return dataTable
 
 
-def namedRe(name, respec, before = 'none', after='require'): #function wrote by David Yaron
+def namedRe(name, respec, before='none', after='require'): #function written by David Yaron
     '''
       wraps a regular expression in a block that gives it a name:
           (?P<name> respec)
@@ -113,3 +113,15 @@ def namedRe(name, respec, before = 'none', after='require'): #function wrote by 
           'require' : r'\s+'}
     res = ws[before] + "(?P<" + name + ">" + respec + ")" + ws[after]
     return res
+
+def fix_badatom(atom):
+    if ' ' in atom:
+        return atom.split()
+    a = ''
+    i = ''
+    for chr_ in atom:
+        if chr_.isalpha():
+            a += chr_
+        else:
+            i += chr_
+    return [a, i]

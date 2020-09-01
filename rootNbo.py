@@ -3,91 +3,121 @@ import copy
 
 # These two function extract the information needed and seperate them into different seperate files
 # based on the origin file(whether it is a triplet or singlet)
-def unrestricted(file):
-    nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
-    endNAO = brf.find("Summary of Natural Population Analysis:",file)
-    startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
-    startNBObeta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
-    nboSumEnd = brf.find("Total Lewis",file)
-    endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
-    startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
-    # endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
-    startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
-    endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
-    endNLMO = brf.find("*******         Beta  spin orbitals         *******",file)
-    endNLMO2 = brf.find("NBO analysis completed",file) 
-    nboSumAlpha = file[nboSumStart[0]:nboSumEnd[len(nboSumEnd)-3]]
-    nboSumBeta = file[nboSumStart[1]:nboSumEnd[len(nboSumEnd)-1]]
-    nlmoAlpha = file[startNLMO[0]:endNLMO[0]]
-    nlmoBeta = file[startNLMO[1]:endNLMO2[0]]
-    naoAll = file[startNAO[0]:endNAO[0]]
-    naoAlpha = file[startNAO[1]:endNAO[1]]
-    naoBeta = file[startNAO[2]:endNAO[2]]
-    nboAlpha = file[startNBOalpha[0]:endNBO[0]]
-    nboBeta = file[startNBObeta[0]:endNBO[1]]
-    cmoAlpha = file[startCMO[0]:startPert[0]]
-    cmoBeta = file[startCMO[1]:startPert[1]]
-    pertAlpha = file[startPert[0]:endPert[0]]
-    pertBeta = file[startPert[1]:endPert[1]]
-    return (nboSumAlpha,nboSumBeta,nlmoAlpha,nlmoBeta,naoAll,naoAlpha,naoBeta,nboAlpha,nboBeta,cmoAlpha,cmoBeta,pertAlpha,pertBeta)    
+def unrestricted(file, selected=None):
+
+    tabs = {}
+
+    if 'nboSum' in selected:
+        nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+        nboSumEnd = brf.find("Total Lewis",file)
+        nboSumAlpha = file[nboSumStart[0]:nboSumEnd[len(nboSumEnd)-3]]
+        nboSumBeta = file[nboSumStart[1]:nboSumEnd[len(nboSumEnd)-1]]
+        tabs['nboSumAlpha'], tabs['nboSumBeta'] = nboSumAlpha, nboSumBeta
+
+    if 'nao' in selected:
+        startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
+        endNAO = brf.find("Summary of Natural Population Analysis:",file)
+        naoAll = file[startNAO[0]:endNAO[0]]
+        naoAlpha = file[startNAO[1]:endNAO[1]]
+        naoBeta = file[startNAO[2]:endNAO[2]]
+        tabs['naoAll'], tabs['naoAlpha'], tabs['naoBeta'] = naoAll, naoAlpha, naoBeta
     
-def restricted(file):
-    nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
-    nboSumEnd = brf.find("$END",file)
-    startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
-    endNAO = brf.find("Summary of Natural Population Analysis:",file)
-    startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS",file)
-    endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
-    startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
-    endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
-    startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
-    endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
-    startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
-    endNLMO = brf.find("NBO analysis completed",file) 
-    nboSum = file[nboSumStart[0]:nboSumEnd[0]]
-    nlmo = file[startNLMO[0]:endNLMO[0]]
-    nao = file[startNAO[0]:endNAO[0]]
-    nbo = file[startNBOalpha[0]:endNBO[0]]
-    cmo = file[startCMO[0]:endCMO[0]]
-    pert = file[startPert[0]:endPert[0]]
-    return (nboSum,nlmo,nao,nbo,cmo,pert)
+    if 'nbo' in selected:
+        startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
+        startNBObeta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
+        endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
+        nboAlpha = file[startNBOalpha[0]:endNBO[0]]
+        nboBeta = file[startNBObeta[0]:endNBO[1]]
+        tabs['nboAlpha'], tabs['nboBeta'] = nboAlpha, nboBeta
+
+    if 'nlmo' in selected:
+        startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
+        endNLMO = brf.find("*******         Beta  spin orbitals         *******",file)
+        endNLMO2 = brf.find("NBO analysis completed",file) 
+        nlmoAlpha = file[startNLMO[0]:endNLMO[0]]
+        nlmoBeta = file[startNLMO[1]:endNLMO2[0]]
+        tabs['nlmoAlpha'], tabs['nlmoBeta'] = nlmoAlpha, nlmoBeta
+    
+    if 'cmo' in selected:
+        startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
+        startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
+        cmoAlpha = file[startCMO[0]:startPert[0]]
+        cmoBeta = file[startCMO[1]:startPert[1]]
+        tabs['cmoAlpha'], tabs['cmoBeta'] = cmoAlpha, cmoBeta
+    
+    if 'pert' in selected:
+        if 'CMO' not in selected:
+            startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
+        endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+        pertAlpha = file[startPert[0]:endPert[0]]
+        pertBeta = file[startPert[1]:endPert[1]]
+        tabs['pertAlpha'], tabs['pertBeta'] = pertAlpha, pertBeta
+    
+    return tabs
+    
+def restricted(file, selected=None):
+
+    tabs = {}
+
+    if 'nboSum' in selected:
+        nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+        nboSumEnd = brf.find("$END",file)
+        tabs['nboSum'] = file[nboSumStart[0]:nboSumEnd[0]]
+    
+    if 'nao' in selected:
+        startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
+        endNAO = brf.find("Summary of Natural Population Analysis:",file)
+        tabs['nao'] = file[startNAO[0]:endNAO[0]]
+    
+    if 'nbo' in selected:
+        startNBO = brf.find("NATURAL BOND ORBITAL ANALYSIS",file)
+        endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
+        tabs['nbo'] = file[startNBO[0]:endNBO[0]]
+    
+    if 'nlmo' in selected:
+        startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
+        endNLMO = brf.find("NBO analysis completed",file) 
+        tabs['nlmo'] = file[startNLMO[0]:endNLMO[0]]
+    
+    if 'cmo' in selected:
+        startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
+        endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
+        tabs['cmo'] = file[startCMO[0]:endCMO[0]]
+    
+    if 'pert' in selected:
+        startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
+        endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+        tabs['pert'] = file[startPert[0]:endPert[0]]
+    
+    return tabs
 
 class nbo(object):
-    def __init__(self,file):
+    def __init__(self, file, selected=None, triplet=False, determine_triplet=False):
         lines = brf.readlines(file)
-        self.triplet = False
-        for line in lines: # Determines if the file is a singlet file or triplet file
-            if "alpha spin orbitals" in line:
-                self.triplet = True
-                break
-        if self.triplet == True:
-            self.nboSumAlpha,self.nboSumBeta,self.nlmoAlpha,self.nlmoBeta,self.naoAll,self.naoAlpha,self.naoBeta,self.nboAlpha,self.nboBeta,self.cmoAlpha,self.cmoBeta,self.pertAlpha,self.pertBeta = unrestricted(lines)
-            self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
+        self.triplet = triplet
+        if determine_triplet:
+            for line in lines: # Determines if the file is a singlet file or triplet file
+                if "alpha spin orbitals" in line:
+                    self.triplet = True
+                    break
+        self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
+        if 'npa' in selected:
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
-            self.nboSumA = nbo.replacement(self.nboSumAlpha,self.badAts,self.badAtsF)
-            self.nboSumB = nbo.replacement(self.nboSumBeta,self.badAts,self.badAtsF)
-            self.nlmoA = nbo.replacement(self.nlmoAlpha,self.badAts,self.badAtsF)
-            self.nlmoB = nbo.replacement(self.nlmoBeta,self.badAts,self.badAtsF)
-            self.nao = nbo.replacement(self.naoAll,self.badAts,self.badAtsF)
-            self.naoA = nbo.replacement(self.naoAlpha,self.badAts,self.badAtsF)
-            self.naoB = nbo.replacement(self.naoBeta,self.badAts,self.badAtsF)
-            self.nboA = nbo.replacement(self.nboAlpha,self.badAts,self.badAtsF)
-            self.nboB = nbo.replacement(self.nboBeta,self.badAts,self.badAtsF)
-            self.cmoA = nbo.replacement(self.cmoAlpha,self.badAts,self.badAtsF)
-            self.cmoB = nbo.replacement(self.cmoBeta,self.badAts,self.badAtsF)
-            self.pertA = nbo.replacement(self.pertAlpha,self.badAts,self.badAtsF)
-            self.pertB = nbo.replacement(self.pertBeta,self.badAts,self.badAtsF)
         else:
-            self.nboSum,self.nlmo,self.nao,self.nbo,self.cmo,self.pert = restricted(lines)
-            self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
-            self.nboSum = nbo.replacement(self.nboSum,self.badAts,self.badAtsF)
-            self.nlmo = nbo.replacement(self.nlmo,self.badAts,self.badAtsF)
-            self.nao = nbo.replacement(self.nao,self.badAts,self.badAtsF)
-            self.nbo = nbo.replacement(self.nbo,self.badAts,self.badAtsF)
-            self.cmo = nbo.replacement(self.cmo,self.badAts,self.badAtsF)
-            self.pert = nbo.replacement(self.pert,self.badAts,self.badAtsF)
+            del self.npa
+        if self.triplet:
+            tabs = unrestricted(lines, selected=selected)
+            for key in selected:
+                if key != 'npa':
+                    setattr(self, key+'A', nbo.replacement(tabs[key+'Alpha'],self.badAts,self.badAtsF))
+                    setattr(self, key+'B', nbo.replacement(tabs[key+'Beta'],self.badAts,self.badAtsF))
+                    if key == 'nao':
+                        setattr(self, 'nao', nbo.replacement(tabs['naoAll'],self.badAts,self.badAtsF))
+        else:
+            tabs = restricted(lines, selected=selected)
+            for key in selected:
+                if key != 'npa':
+                    setattr(self, key, nbo.replacement(tabs[key],self.badAts,self.badAtsF))
 
     #This is a method to locate the summary of natural population analysis and determine if there is 
     #incorrect character due to the Gaussian generation and find the correct way. (Ex: C125 -> C 125)
@@ -108,15 +138,8 @@ class nbo(object):
                 pos22.append(elem)
                 break
         npa = lines[pos11[0]+1:pos22[0]]
-        ats = []
-        badAts = []
-        badAtsF = []
-        for line in npa:
-            ats.append(line[0])
-        for atom in ats:
-            if not atom.isalpha:
-                position = ats.index(atom)
-                badAts.append(ats[position])
+        ats, badAtsF = [line[0] for line in npa], []
+        badAts = [atom for atom in ats if not atom.isalpha()]
         for elem in badAts:
             character = ""
             number = ""
@@ -132,10 +155,8 @@ class nbo(object):
     #This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
     def parseNPA(self) -> list:
         columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
-        if not self.triplet:
-            length = 7
-        else:
-            length = 8 
+        length = 7 + int(self.triplet)
+        if self.triplet:
             columns.append('Natural Spin Density')
         def helper(line):
             element = ''.join([i for i in line[0] if i.isalpha()])
