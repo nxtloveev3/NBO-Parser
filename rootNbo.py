@@ -10,7 +10,7 @@ def unrestricted(file, selected=None):
     if 'nboSum' in selected:
         nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
         nboSumEnd = brf.find("Total Lewis",file)
-        nboSumAlpha = file[nboSumStart[0]:nboSumEnd[len(nboSumEnd)-3]]
+        nboSumAlpha = file[nboSumStart[0]:nboSumEnd[len(nboSumEnd)-4]]
         nboSumBeta = file[nboSumStart[1]:nboSumEnd[len(nboSumEnd)-1]]
         tabs['nboSumAlpha'], tabs['nboSumBeta'] = nboSumAlpha, nboSumBeta
 

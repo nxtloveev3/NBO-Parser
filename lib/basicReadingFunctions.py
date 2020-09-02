@@ -14,8 +14,8 @@ def readlines(file):
 def find(text,file):
     result = []
     count = 0
-    for elem in file:
-        if text in elem:
+    for line in file:
+        if text in line:
             result.append(count)
         count += 1
     return result

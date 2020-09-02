@@ -21,22 +21,14 @@ def parseNAO(file, verbose=True):
         newLine = {}
         if naoLineRe.match(line):
             info = naoLineRe.match(line).groupdict()
-            nao = info["NAO"]
-            newLine["NAO"] = int(nao)
-            atom = info["Atom"]
-            newLine["Atom"] = atom
-            number = info["NO"]
-            newLine["NO"] = int(number)
-            lang = info["lang"]
-            newLine["lang"] = lang
-            types = info["Type"]
-            newLine["Type"] = types
-            ao = info["AO"]
-            newLine["AO"] = ao
-            occupancy = info["Occupancy"]
-            newLine["Occupancy"] = float(occupancy)
-            energy = info["Energy"]
-            newLine["Energy"] = float(energy)
+            newLine["NAO"] = int(info["NAO"])
+            newLine["Atom"] = info["Atom"]
+            newLine["NO"] = int(info["NO"])
+            newLine["lang"] = info["lang"]
+            newLine["Type"] = info["Type"]
+            newLine["AO"] = info["AO"]
+            newLine["Occupancy"] = float(info["Occupancy"])
+            newLine["Energy"] = float(info["Energy"])
             result.append(newLine)
         else:
             if verbose:
