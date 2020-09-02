@@ -1,5 +1,5 @@
 import re
-from .basicReadingFunctions import namedRe, find, findExact, extractTab, fix_badatom
+from .basicReadingFunctions import namedRe, fix_badatom
 import pandas as pd
 
 def fix_info(info):
@@ -14,7 +14,7 @@ def fix_info(info):
             info['Loc'+key[4:]] = int(i)
 
 def parseCMON(text, verbose=False):
-    # loc = find("Molecular Orbital Atom-Atom Bonding Character",file)
+
     try:
         loc = text.index("Molecular Orbital Atom-Atom Bonding Character")
         text = text[:loc]

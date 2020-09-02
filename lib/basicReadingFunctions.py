@@ -31,11 +31,14 @@ def findExact(text,file):
         count += 1
     return result
 
-def replacingDigit(index,file):
-    file = file.split()
-    if file[index].endswith("."): #Treat the number so it is easier to recognize as digit (Ex: 120. -> 120)
-        file[index] = file[index][:-1]
-    return file
+def extract(file, pos):
+    return [file[i] for i in pos]
+
+# def replacingDigit(index,file):
+#     file = file.split()
+#     if file[index].endswith("."): #Treat the number so it is easier to recognize as digit (Ex: 120. -> 120)
+#         file[index] = file[index][:-1]
+#     return file
 
 #Following two equation takes in information and generates new table that takes unnecessary information out.
 def fixEnding(posFile,tmpFile):

@@ -1,7 +1,7 @@
 import re
-from .basicReadingFunctions import namedRe, find, findExact, extractTab, replacingDigit
+from .basicReadingFunctions import namedRe
 
-def parseNAO(file, verbose=True):
+def parseNAO(file, verbose=False):
     reFloat = r"-?\d+\.\d+"
     lang = r"[a-z][a-z]?\d*[a-z]?\d*"
     atom = r"[A-Z][a-z]?"

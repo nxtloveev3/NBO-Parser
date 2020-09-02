@@ -1,12 +1,16 @@
 import re
-from .basicReadingFunctions import namedRe, find, findExact, extractTab, replacingDigit
+from .basicReadingFunctions import namedRe, find, extract
 import pandas as pd
+
+def fix_info(info):
+    info['NBO'] = info['NBO'][:-1]
+    return info
 
 def parseNonBond(file, verbose=False):
     reFloat = r"-?\d+\.\d+"
     bondType = r"\d*[A-Z][A-Z]?[a-z]?\*?"
     atom = r"[A-Z][a-z]?"
-    nboSumLine = namedRe('NBO',r"\d+",before='allow')
+    nboSumLine = namedRe('NBO',r"\d+.",before='allow')
     nboSumLine += namedRe('Type',bondType)
     nboSumLine += r"\(" + namedRe('AO',r"\d+",before='allow',after='none') + r"\)"
     nboSumLine += namedRe('Atom',atom,before='allow')
@@ -19,7 +23,7 @@ def parseNonBond(file, verbose=False):
     for line in file:
         correct = nboLineRe.search(line)
         if correct:
-            result.append(correct.groupdict())
+            result.append(fix_info(correct.groupdict()))
         elif verbose:
             print('IGNORE: ', line)
     return result
@@ -28,7 +32,7 @@ def parseBond(file, verbose=False):
     reFloat = r"-?\d+\.\d+"
     bondType = r"\d*[A-Z][A-Z]?[a-z]?\*?"
     atom = r"[A-Z][a-z]?"
-    nboSumLine = namedRe('NBO',r"\d+",before='allow')
+    nboSumLine = namedRe('NBO',r"\d+.",before='allow')
     nboSumLine += namedRe('Type',bondType,after='allow')
     nboSumLine += r"\(" + namedRe('AO',r"\d+",before='allow',after='none') + r"\)"
     nboSumLine += namedRe('Atom1',atom,before='allow',after='allow')
@@ -43,7 +47,7 @@ def parseBond(file, verbose=False):
     for line in file:
         correct = nboLineRe.search(line)
         if correct:
-            result.append(correct.groupdict())
+            result.append(fix_info(correct.groupdict()))
         elif verbose:
             print('IGNORE: ', line)
     return result
@@ -67,20 +71,15 @@ def parse3CBond(file, verbose=False):
     for line in file:
         correct = nboLineRe.search(line)
         if correct:
-            result.append(correct.groupdict())
+            result.append(fix_info(correct.groupdict()))
         elif verbose:
             print('IGNORE: ', line)
     return result
 
 def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3C", "3Cn", "3Cs"]):
 
-    if type(file[0])==str:
-        for i,line in enumerate(file):
-            if len(line) > 0: 
-                file[i] = replacingDigit(0,line)
-
     tables = {}
-
+        
     def helper(df, list_1, list_2, list_3):
         df[list_1] = df[list_1].astype(int)
         df[list_2] = df[list_2].astype(str)
@@ -90,7 +89,7 @@ def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3
     for key in ['CR', 'LP', 'LV']:
         if key in selected:
             pos = find(key, file)
-            table = pd.DataFrame(parseNonBond(extractTab(file, pos), verbose=verbose))
+            table = pd.DataFrame(parseNonBond(extract(file, pos), verbose=verbose))
             try:
                 table = helper(table, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
                 tables[key] = table
@@ -103,8 +102,8 @@ def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3
             if key=='ABB':
                 pos = find("BD*(", file)
             else:
-                pos = findExact(key, file)
-            tab = pd.DataFrame(parseBond(extractTab(file, pos), verbose=verbose))
+                pos = find('BD ', file)
+            tab = pd.DataFrame(parseBond(extract(file, pos), verbose=verbose))
             try:
                 tab = helper(tab, ['NBO','AO','Loc1','Loc2'], ['Type','Atom1','Atom2'], ['Occupancy','Energy'])
                 tables[key] = tab
@@ -115,14 +114,14 @@ def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3
     for key in ['3C', '3Cn', '3Cs']:
         if key in selected:
             if key=='3Cn':
-                pos = find("3Cn(", file)
+                pos = find("3Cn", file)
             elif key=='3Cs':
-                pos = find("3C*(", file)
+                pos = find("3C*", file)
             else:
-                pos = findExact("3C", file)
-            tab = pd.DataFrame(parse3CBond(extractTab(file, pos), verbose=verbose))
+                pos = find("3C ", file)
+            tab = pd.DataFrame(parse3CBond(extract(file, pos), verbose=verbose))
             try:
-                # tab = helper(tab, ['NBO', 'AO','Loc'], ['Type','Atom'], ['Occupancy','Energy'])
+                tab = helper(tab, ['NBO','AO','Loc1','Loc2', 'Loc3'], ['Type','Atom1','Atom2','Atom3'], ['Occupancy','Energy'])
                 tables[key] = tab
             except:
                 if verbose:
