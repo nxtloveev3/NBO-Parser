@@ -15,7 +15,7 @@ def fix_info(info):
             atom, i = fix_badatom(info[key])
             info[key] = atom
             info['Loc'+key[4:]] = int(i)
-    if info['Type'] == '3C*':
+    if 'Type' in info and info['Type'] == '3C*':
         info['Type'] = '3Cs'
     return info
 

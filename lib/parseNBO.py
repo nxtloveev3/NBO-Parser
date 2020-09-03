@@ -25,7 +25,7 @@ def parseNBO(text, verbose=False):
     nboNonBondLine += r"\(" + namedRe("Occupancy", reFloat, before='allow', after='none') + r"\)"
     nboNonBondLine += namedRe("Type", nonBondType, before='require')
     nboNonBondLine += r"\(" + namedRe("BondOrbital", r"\d+", before='allow', after='none') + r"\)"
-    nboNonBondLine += namedRe("Atom", atom, before='allow')
+    nboNonBondLine += namedRe("Atom1", atom, before='allow')
     nboNonBondLine += namedRe("Hybrids", hybrids,after='allow')
     nboNonBondLineRe = re.compile(nboNonBondLine)
 
