@@ -4,14 +4,20 @@ import pandas as pd
 
 def fix_info(info):
     for key in list(info.keys()):
-        if key in ['NBO', 'Index', 'Loc', 'Loc1', 'Loc2']:
-            info[key] = int(info[key])
+        if key in ['NBO', 'Index', 'Loc', 'Loc1', 'Loc2', 'Loc3']:
+            try:
+                info[key] = int(info[key])
+            except:
+                pass
         elif key in ['Coef', 'Coeff', 'Bonding', 'NonBonding', 'AntiBonding']:
             info[key] = float(info[key])
         elif key[:4]=='Atom' and 'Loc'+key[4:] not in info:
             atom, i = fix_badatom(info[key])
             info[key] = atom
             info['Loc'+key[4:]] = int(i)
+    if info['Type'] == '3C*':
+        info['Type'] = '3Cs'
+    return info
 
 def parseCMON(text, verbose=False):
 
@@ -21,29 +27,40 @@ def parseCMON(text, verbose=False):
     except:
         pass
 
-    ####NonBond Regex####
     reFloat = r"-?\d+\.\d+"
-    nonBondType = r"\d*[A-Z][A-Z]?[a-z]?"
     atom = r"[A-Z][a-z]?"
+    loc = r"\d?\**"
+    ####NonBond Regex####
+    nonBondType = r"\d*[A-Z][A-Z]?[a-z]?"
     cmonLine = namedRe("Coef", reFloat, before="allow", after='none')
     cmonLine += r"\*\[" + namedRe("NBO", r"\d+", before="allow", after='none') + r"\]\:"
     cmonLine += namedRe("Type", nonBondType, before="require")
     cmonLine += r"\(" + namedRe("Index", r"\d+", before="allow", after='none') + r"\)"
     cmonLine += namedRe("Atom", atom, before="allow", after='allow')
-    cmonLine += namedRe("Loc", r"\d+", before="allow", after='allow')
+    cmonLine += namedRe("Loc", loc, before="none", after='none')
     cmonLineRe = re.compile(cmonLine)
 
     ####Bond Regex####
-    bondType = r"\d*[A-Z][A-Z][A-Z]?"
+    bondType = r"[A-Z]{2,}"
     cmonBondLine = namedRe("Coef", reFloat, before="allow", after='none')
     cmonBondLine += r"\*\[" + namedRe("NBO", r"\d+", before='allow', after='none') + r"\]\:"
     cmonBondLine += namedRe("Type", bondType, before="require", after='allow')
     cmonBondLine += r"\(" + namedRe("Index", r"\d+",before="allow", after='none') + r"\)"
     cmonBondLine += namedRe("Atom1", atom, before="allow", after='allow')
-    cmonBondLine += namedRe("Loc1", r"\d+", before="allow", after='none')
+    cmonBondLine += namedRe("Loc1", loc, before="allow", after='none')
     cmonBondLine += r"\-" + namedRe("Atom2", atom, before='allow', after='none')
-    cmonBondLine += namedRe("Loc2", r"\d+", before='allow', after='none') + r"\*?"
+    cmonBondLine += namedRe("Loc2", loc, before='allow', after='none') + r"\*?"
     cmonBondLineRe = re.compile(cmonBondLine)
+
+    ####3C Bond Regex####
+    cmon3CBondLine = namedRe("Coef", reFloat, before="allow", after='none')
+    cmon3CBondLine += r"\*\[" + namedRe("NBO", r"\d+", before='allow', after='none') + r"\]\:"
+    cmon3CBondLine += namedRe("Type",  r'3C[a-z]*\**', before="require", after='allow')
+    cmon3CBondLine += r"\(" + namedRe("Index", r"\d+",before="allow", after='none') + r"\)"
+    cmon3CBondLine += namedRe("Loc1", loc, before="allow", after='allow')+r'\-'
+    cmon3CBondLine += namedRe("Loc2", loc, before='allow', after='allow')+r'\-'
+    cmon3CBondLine += namedRe("Loc3", loc, before='allow', after='none')
+    cmon3CBondLineRe = re.compile(cmon3CBondLine)
 
     ####MO Regex####
     cmonMOLine = namedRe("Label1", r"[M][O]", before='allow')
@@ -71,14 +88,12 @@ def parseCMON(text, verbose=False):
             result[currentMO]["Energy"] = energy
             result[currentMO]["Type"] = typ
             result[currentMO]["wf"] = []
+        elif cmon3CBondLineRe.search(line):
+            result[currentMO]["wf"].append(fix_info(cmon3CBondLineRe.search(line).groupdict()))
         elif cmonBondLineRe.search(line):
-            correct = cmonBondLineRe.search(line).groupdict()
-            fix_info(correct)
-            result[currentMO]["wf"].append(correct)
+            result[currentMO]["wf"].append(fix_info(cmonBondLineRe.search(line).groupdict()))
         elif cmonLineRe.search(line):
-            correct = cmonLineRe.search(line).groupdict()
-            fix_info(correct)
-            result[currentMO]["wf"].append(correct)
+            result[currentMO]["wf"].append(fix_info(cmonLineRe.search(line).groupdict()))
         else:
             if verbose:
                 print("parseCMON WARNING: line not recognized "+ line)
@@ -89,25 +104,24 @@ def parseCMON(text, verbose=False):
 def parseCMO2(text, verbose=False):
     loc = text.index("Molecular Orbital Atom-Atom Bonding Character")
     text = text[loc:]
-
-    ####Bonding Regex####
     reFloat = r"-?\d+\.\d+"
-    atom = r"[A-Z][a-z]?\s*\d+"
-    cmo2BondLine = r"\b" + namedRe("Coeff", reFloat, before='allow')
-    cmo2BondLine += namedRe('Atom1', atom, after='none') + r"\-"
-    cmo2BondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\b"
-    cmo2BondLineRe = re.compile(cmo2BondLine)
+    # ####Bonding Regex####
+    # atom = r"[A-Z][a-z]?\s*\d+"
+    # cmo2BondLine = r"\b" + namedRe("Coeff", reFloat, before='allow', after='allow')
+    # cmo2BondLine += namedRe('Atom1', atom, after='none') + r"\-"
+    # cmo2BondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\b"
+    # cmo2BondLineRe = re.compile(cmo2BondLine)
 
-    ####NonBonding Regex####
-    cmo2NonBondLine = namedRe("Coeff", reFloat, before='allow')
-    cmo2NonBondLine += namedRe('Atom', atom, after='allow')
-    cmo2NonBondLineRe = re.compile(cmo2NonBondLine)
+    # ####NonBonding Regex####
+    # cmo2NonBondLine = namedRe("Coeff", reFloat, before='require', after='require')
+    # cmo2NonBondLine += namedRe('Atom', atom, before='allow', after='allow')
+    # cmo2NonBondLineRe = re.compile(cmo2NonBondLine)
 
-    ####AntiBonding Regex####
-    cmo2AntiBondLine = namedRe("Coeff", reFloat, before='allow')
-    cmo2AntiBondLine += namedRe('Atom1', atom, after='none') + r"\-"
-    cmo2AntiBondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\*"
-    cmo2AntiBondLineRe = re.compile(cmo2AntiBondLine)
+    # ####AntiBonding Regex####
+    # cmo2AntiBondLine = namedRe("Coeff", reFloat, before='allow')
+    # cmo2AntiBondLine += namedRe('Atom1', atom, after='none') + r"\-"
+    # cmo2AntiBondLine += namedRe('Atom2', atom, before='allow', after='allow') + r"\*"
+    # cmo2AntiBondLineRe = re.compile(cmo2AntiBondLine)
 
     ####MOLine Regex####
     cmo2MOLine = namedRe("MO", r"\d+", after="none") + namedRe("Type", r"\(" + r"\w+" + r"\)", after="none")
@@ -120,7 +134,7 @@ def parseCMO2(text, verbose=False):
     cmo2TotalLine += r"\s+\w+"
     cmo2TotalLineRe = re.compile(cmo2TotalLine)
 
-    result={}
+    result = {}
     currentMO = None
     SOMO = 0
     for line in text:
@@ -130,45 +144,12 @@ def parseCMO2(text, verbose=False):
             typ = correct['Type']
             if SOMO == 0 and typ == '(v)':
                 SOMO = currentMO - 1
-            result[currentMO] = dict()
-            result[currentMO]["Bonding"] = []
-            result[currentMO]["NonBonding"] = []
-            result[currentMO]["AntiBonding"] = []
-            result[currentMO]["Total"] = []
-            treatline = line.split()
-            newline = ""
-            for elem in treatline[1:]:
-                newline += elem + " "
-            if cmo2BondLineRe.match(newline):
-                info = cmo2BondLineRe.match(newline).groupdict()
-                fix_info(info)
-                result[currentMO]["Bonding"].append(info)
-            if cmo2AntiBondLineRe.match(newline):
-                info = cmo2AntiBondLineRe.match(newline).groupdict()
-                fix_info(info)
-                result[currentMO]["AntiBonding"].append(info)
-            if cmo2NonBondLineRe.match(newline):
-                info = cmo2NonBondLineRe.match(newline).groupdict()
-                fix_info(info)
-                result[currentMO]["NonBonding"].append(info)
-        elif cmo2BondLineRe.match(line):
-            info = cmo2BondLineRe.match(line).groupdict()
-            fix_info(info)
-            result[currentMO]["Bonding"].append(info)
-        elif cmo2AntiBondLineRe.match(line):
-            info = cmo2AntiBondLineRe.match(line).groupdict()
-            fix_info(info)
-            result[currentMO]["AntiBonding"].append(info)
-        elif cmo2NonBondLineRe.match(line):
-            info = cmo2NonBondLineRe.match(line).groupdict()
-            fix_info(info)
-            result[currentMO]["NonBonding"].append(info)
-        elif cmo2TotalLineRe.match(line):
-            info = cmo2TotalLineRe.match(line).groupdict()
-            fix_info(info)
-            result[currentMO]["Total"].append(info)
-        else:
-            if verbose:
-                print("parseCMO2 WARNING: line not recognized "+ line)
-
+            result[currentMO] = {'Type': typ} 
+        elif cmo2TotalLineRe.search(line):
+            info = fix_info(cmo2TotalLineRe.search(line).groupdict())
+            for key in info:
+                if key not in result[currentMO]:
+                    result[currentMO][key] = info[key]
+        elif verbose:
+            print("parseCMO2 WARNING: line not recognized "+ line)
     return result, SOMO
