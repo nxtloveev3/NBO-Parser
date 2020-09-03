@@ -54,7 +54,7 @@ def parseNBO(text, verbose=False):
     ####Coeff of NAO Regex####
     coeffN = namedRe('coeff', r'0.\d\d*', before='allow', after='none')
     coeffN += r'\*'
-    coeffN += namedRe('Atom', r'[A-Z][a-z]*', before='require', after='allow')
+    coeffN += namedRe('Atom', r'[A-Z][a-z]*', before='allow', after='allow')
     coeffN += namedRe('Loc', r'\d\d*', before='allow', after='allow')
     coeffNRe = re.compile(coeffN)
         
