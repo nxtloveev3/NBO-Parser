@@ -11,8 +11,10 @@ def fix_info(info):
             atom, i = fix_badatom(info[key])
             info[key] = atom
             info['Loc'+key[4:]] = int(i)
+    return info
 
 def parseNBO(text, verbose=False):
+
     start = text.index("(Occupancy)   Bond orbital / Coefficients / Hybrids")
     text = text[start:]
     
@@ -60,36 +62,23 @@ def parseNBO(text, verbose=False):
     currentIndex = None
     for line in text:
         if "BD*" in line:
-            line = line.replace("BD*", "ABB") #ABB stand for antibonding bonds
-        if nboNonBondLineRe.match(line):
-            info = nboNonBondLineRe.match(line).groupdict()
-            fix_info(info)
-            currentIndex = int(info["Index"])
-            del info["Index"]
-            if verbose:
-                print(currentIndex)
-            result[currentIndex] = info
-        elif nboBondLineRe.match(line):
-            info = nboBondLineRe.match(line).groupdict()
-            fix_info(info)
-            currentIndex = int(info["Index"])
-            del info["Index"]
-            result[currentIndex] = info
-        elif nbo3CBondLineRe.match(line):
-            info = nbo3CBondLineRe.match(line).groupdict()
-            fix_info(info)
-            currentIndex = int(info["Index"])
-            del info["Index"]
-            result[currentIndex] = info
-        elif coeffNRe.search(line):
+            line = line.replace("BD*", "ABB") #ABB stands for antibonding bonds
+        parsed = False
+        for r in [nboNonBondLineRe, nboBondLineRe, nbo3CBondLineRe]:
+            if r.match(line):
+                info = fix_info(r.match(line).groupdict())
+                currentIndex = int(info["Index"])
+                del info["Index"]
+                result[currentIndex] = info
+                parsed = True
+                break
+        if not parsed and coeffNRe.search(line):
             info = coeffNRe.search(line).groupdict()
             loc = int(info['Loc'])
-            if loc == result[currentIndex]["Loc1"] and "Coeff1" not in result[currentIndex]:
-                result[currentIndex]["Coeff1"] = float(info['coeff'])
-            elif loc == result[currentIndex]["Loc2"] and "Coeff2" not in result[currentIndex]:
-                result[currentIndex]["Coeff2"] = float(info['coeff'])
-            elif loc == result[currentIndex]["Loc3"] and "Coeff3" not in result[currentIndex]:
-                result[currentIndex]["Coeff3"] = float(info['coeff'])
+            for i in range(1,4):
+                if "Loc"+str(i) in result[currentIndex]:
+                    if loc == result[currentIndex]["Loc"+str(i)] and "Coeff"+str(i) not in result[currentIndex]:
+                        result[currentIndex]["Coeff"+str(i)] = float(info['coeff'])
         else:
             if verbose:
                 print("Ignoring this line:", line)
