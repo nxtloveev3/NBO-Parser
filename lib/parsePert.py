@@ -8,6 +8,28 @@ def fix_info(info):
         info[key] = float(info[key])
     return info
 
+####pert Regex ####
+reFloat = r"-?\d+\.\d+"
+reIndex = r"\d+\."
+# atomicType = r"[A-Z][A-Z][A-Z]?"
+# atom = r"[A-Z][a-z]?\s*\d+(\-\s*[A-Z][a-z]?\s*\d+)?"
+# pertLine = namedRe("NBO1", r"\d+",before='allow',after='none') + r"\."
+# pertLine += namedRe("Type1", atomicType,before='allow',after='allow')
+# pertLine += r"\(" + namedRe("Index1", r"\d+",before='allow',after='none') + r"\)"
+# pertLine += namedRe("AtomInfo1", atom,before='allow')
+# pertLine += namedRe("NBO2", r"\d+",after='none') + r"\."
+# pertLine += namedRe("Type2", atomicType,before='allow',after='allow')
+# pertLine += r"\(" + namedRe("Index2", r"\d+",before='allow',after='none') + r"\)"
+# pertLine += namedRe("AtomInfo2", atom,before='allow')
+pertLine = namedRe("NBO1", reIndex, before='none', after='none')
+pertLine += r'.*'
+pertLine += namedRe("NBO2", reIndex, before='require', after='require')
+pertLine += r'.*\s+'
+pertLine += namedRe("E", reFloat)
+pertLine += namedRe("EE", reFloat)
+pertLine += namedRe("F", reFloat,after='allow')
+pertLineRe = re.compile(pertLine)
+
 def parsePert(file, verbose=False):
     # tmpFile = []
     # for line in file:
@@ -15,28 +37,6 @@ def parsePert(file, verbose=False):
     #     if "BD*" in line:
     #         newline = line.replace("BD*","ABB") #ABB stand for antibonding bonds
     #     tmpFile.append(newline)
-    
-    ####pert Regex ####
-    reFloat = r"-?\d+\.\d+"
-    reIndex = r"\d+\."
-    # atomicType = r"[A-Z][A-Z][A-Z]?"
-    # atom = r"[A-Z][a-z]?\s*\d+(\-\s*[A-Z][a-z]?\s*\d+)?"
-    # pertLine = namedRe("NBO1", r"\d+",before='allow',after='none') + r"\."
-    # pertLine += namedRe("Type1", atomicType,before='allow',after='allow')
-    # pertLine += r"\(" + namedRe("Index1", r"\d+",before='allow',after='none') + r"\)"
-    # pertLine += namedRe("AtomInfo1", atom,before='allow')
-    # pertLine += namedRe("NBO2", r"\d+",after='none') + r"\."
-    # pertLine += namedRe("Type2", atomicType,before='allow',after='allow')
-    # pertLine += r"\(" + namedRe("Index2", r"\d+",before='allow',after='none') + r"\)"
-    # pertLine += namedRe("AtomInfo2", atom,before='allow')
-    pertLine = namedRe("NBO1", reIndex, before='none', after='none')
-    pertLine += r'.*'
-    pertLine += namedRe("NBO2", reIndex, before='require', after='require')
-    pertLine += r'.*\s+'
-    pertLine += namedRe("E", reFloat)
-    pertLine += namedRe("EE", reFloat)
-    pertLine += namedRe("F", reFloat,after='allow')
-    pertLineRe = re.compile(pertLine)
 
     result = {}
     number = 0

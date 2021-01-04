@@ -1,5 +1,6 @@
 from .lib import basicReadingFunctions as brf
 import copy
+import re
 
 # These two function extract the information needed and seperate them into different seperate files
 # based on the origin file(whether it is a triplet or singlet)
@@ -100,7 +101,7 @@ class nbo(object):
                 if "alpha spin orbitals" in line:
                     self.triplet = True
                     break
-        self.npa,self.badAts,self.badAtsF = nbo.findNpa(file)
+        self.npa,self.badAts,self.badAtsF = findNpa(file)
         if 'npa' in selected:
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
         else:
@@ -118,60 +119,6 @@ class nbo(object):
             for key in selected:
                 if key != 'npa':
                     setattr(self, key, nbo.replacement(tabs[key],self.badAts,self.badAtsF))
-
-    #This is a method to locate the summary of natural population analysis and determine if there is 
-    #incorrect character due to the Gaussian generation and find the correct way. (Ex: C125 -> C 125)
-    @staticmethod 
-    def findNpa(file):
-        lines = brf.readlines(file)
-        npaStart = brf.find("Summary of Natural Population Analysis:",lines)
-        pos1 = brf.find("--------------------------------------------------------------------",lines)
-        pos2 = brf.find("====================================================================",lines)
-        pos11 = []
-        pos22 = []
-        for elem in pos1:
-            if elem > npaStart[0]:
-                pos11.append(elem)
-                break
-        for elem in pos2:
-            if elem > pos11[0]:
-                pos22.append(elem)
-                break
-        npa = lines[pos11[0]+1:pos22[0]]
-        ats, badAtsF = [line[0] for line in npa], []
-        badAts = [atom for atom in ats if not atom.isalpha()]
-        for elem in badAts:
-            character = ""
-            number = ""
-            for char in elem:
-                if char.isalpha():
-                    character += char
-                else:
-                    number += char
-            result = character + " " + number
-            badAtsF.append(result)
-        return (npa,badAts,badAtsF)
-    
-    #This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
-    def parseNPA(self) -> list:
-        columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
-        length = 7 + int(self.triplet)
-        if self.triplet:
-            columns.append('Natural Spin Density')
-        def helper(line):
-            element = ''.join([i for i in line[0] if i.isalpha()])
-            return [element, line[0].replace(element, '')] + line[1:]
-        text = [i.split() for i in self.npa]
-        result = []
-        for line in text:
-            if len(line) != length:
-                line = helper(line)
-            new = {'Atom': line[0]}
-            new['No'] = int(line[1])
-            for i in range(2, length):
-                new[columns[i]] = float(line[i])
-            result.append(new)
-        return result
     
     #This method replaces all the incorrect characters with correct ones
     @staticmethod
@@ -182,3 +129,93 @@ class nbo(object):
                 if incorrect[num] in line:
                     result.replace(incorrect[num],correct[num])
         return result
+
+#This is a method to locate the summary of natural population analysis and determine if there is 
+#incorrect character due to the Gaussian generation and find the correct way. (Ex: C125 -> C 125)
+ 
+def findNpa(text):
+    lines = brf.readlines(text)
+    npaStart = brf.find("Summary of Natural Population Analysis:",lines)
+    pos1 = brf.find("--------------------------------------------------------------------",lines)
+    pos2 = brf.find("====================================================================",lines)
+    pos11 = []
+    pos22 = []
+    for elem in pos1:
+        if elem > npaStart[0]:
+            pos11.append(elem)
+            break
+    for elem in pos2:
+        if elem > pos11[0]:
+            pos22.append(elem)
+            break
+    npa = lines[pos11[0]+1:pos22[0]]
+    ats, badAtsF = [line[0] for line in npa], []
+    badAts = [atom for atom in ats if not atom.isalpha()]
+    for elem in badAts:
+        character = ""
+        number = ""
+        for char in elem:
+            if char.isalpha():
+                character += char
+            else:
+                number += char
+        result = character + " " + number
+        badAtsF.append(result)
+    return (npa,badAts,badAtsF)
+    
+#This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
+def parseNPA(npa, triplet=False) -> list:
+    columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
+    length = 7 + int(triplet)
+    if triplet:
+        columns.append('Natural Spin Density')
+    def helper(line):
+        element = ''.join([i for i in line[0] if i.isalpha()])
+        return [element, line[0].replace(element, '')] + line[1:]
+    text = [i.split() for i in npa]
+    result = []
+    for line in text:
+        if len(line) != length:
+            line = helper(line)
+        new = {'Atom': line[0]}
+        new['No'] = int(line[1])
+        for i in range(2, length):
+            new[columns[i]] = float(line[i])
+        result.append(new)
+    return result
+
+'''
+Finds the final geometry. 
+Set nbo_log=True when parsing a log file of nbo calculation. 
+'''
+_coord = lambda name: "(?P<" + name + ">" + r'-?\d+\.?\d*' + ")"
+coord_line = "(?P<atom>" + r'[A-Z][a-z]?' +")"
+coord_line += r','
+coord_line += _coord('x')
+coord_line += r','
+coord_line += _coord('y')
+coord_line += r','
+coord_line += _coord('z')
+coordRe = re.compile(coord_line)
+coord_line_nbo = "(?P<atom>" + r'[A-Z][a-z]?' +")"
+coord_line_nbo += r',0'
+coord_line_nbo += r','
+coord_line_nbo += _coord('x')
+coord_line_nbo += r','
+coord_line_nbo += _coord('y')
+coord_line_nbo += r','
+coord_line_nbo += _coord('z')
+coordRe_nbo = re.compile(coord_line_nbo)
+
+def parseXYZ(filename, nbo_log=False):
+    with open(filename, 'r') as file:
+        text = file.read().replace('\n', '').replace(' ', '')
+    if nbo_log:
+        r = coordRe_nbo
+    else:
+        r = coordRe
+    def helper(x):
+        for i in ['x', 'y', 'z']:
+            x[i] = float(x[i])
+        return x
+    return [helper(j.groupdict()) for j in r.finditer(text)]

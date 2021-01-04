@@ -6,19 +6,21 @@ def fix_info(info):
     info['NBO'] = info['NBO'][:-1]
     return info
 
+reFloat = r"-?\d+\.\d+"
+bondType = r"\d*[A-Z][A-Z]?[a-z]?\*?"
+atom = r"[A-Z][a-z]?"
+
 def parseNonBond(file, verbose=False):
-    reFloat = r"-?\d+\.\d+"
-    bondType = r"\d*[A-Z][A-Z]?[a-z]?\*?"
-    atom = r"[A-Z][a-z]?"
+
     nboSumLine = namedRe('NBO',r"\d+.",before='allow')
     nboSumLine += namedRe('Type',bondType)
     nboSumLine += r"\(" + namedRe('AO',r"\d+",before='allow',after='none') + r"\)"
-    nboSumLine += namedRe('Atom',atom,before='allow')
+    nboSumLine += namedRe('Atom',atom,before='allow', after='allow')
     nboSumLine += namedRe('Loc',r"\d+",after='allow')
     nboSumLine += namedRe('Occupancy', reFloat)
     nboSumLine += namedRe('Energy', reFloat,after='allow')
     nboLineRe = re.compile(nboSumLine)
-
+    
     result = []
     for line in file:
         correct = nboLineRe.search(line)
@@ -29,9 +31,7 @@ def parseNonBond(file, verbose=False):
     return result
 
 def parseBond(file, verbose=False):
-    reFloat = r"-?\d+\.\d+"
-    bondType = r"\d*[A-Z][A-Z]?[a-z]?\*?"
-    atom = r"[A-Z][a-z]?"
+
     nboSumLine = namedRe('NBO',r"\d+.",before='allow')
     nboSumLine += namedRe('Type',bondType,after='allow')
     nboSumLine += r"\(" + namedRe('AO',r"\d+",before='allow',after='none') + r"\)"
@@ -53,8 +53,7 @@ def parseBond(file, verbose=False):
     return result
 
 def parse3CBond(file, verbose=False):
-    reFloat = r"-?\d+\.\d+"
-    atom = r"[A-Z][a-z]?"
+    
     nboSumLine = namedRe('NBO',r'\d+.',before='allow', after='allow')
     nboSumLine += namedRe('Type', r'3C[a-z]*\**', before='allow', after='allow')
     nboSumLine += r"\(" + namedRe('AO',r"\d+",before='allow',after='none') + r"\)"

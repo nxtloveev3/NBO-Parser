@@ -19,6 +19,50 @@ def fix_info(info):
         info['Type'] = '3Cs'
     return info
 
+reFloat = r"-?\d+\.\d+"
+atom = r"[A-Z][a-z]?"
+loc = r"\d+\**"
+####NonBond Regex####
+nonBondType = r"\d*[A-Z][A-Z]?[a-z]?"
+cmonLine = namedRe("Coef", reFloat, before="allow", after='none')
+cmonLine += r"\*\[" + namedRe("NBO", r"\d+", before="allow", after='none') + r"\]\:"
+cmonLine += namedRe("Type", nonBondType, before="require")
+cmonLine += r"\(" + namedRe("Index", r"\d+", before="allow", after='none') + r"\)"
+cmonLine += namedRe("Atom", atom, before="allow", after='allow')
+cmonLine += namedRe("Loc", loc, before="none", after='none')
+cmonLineRe = re.compile(cmonLine)
+
+####Bond Regex####
+bondType = r"[A-Z]{2,}"
+cmonBondLine = namedRe("Coef", reFloat, before="allow", after='none')
+cmonBondLine += r"\*\[" + namedRe("NBO", r"\d+", before='allow', after='none') + r"\]\:"
+cmonBondLine += namedRe("Type", bondType, before="require", after='allow')
+cmonBondLine += r"\(" + namedRe("Index", r"\d+",before="allow", after='none') + r"\)"
+cmonBondLine += namedRe("Atom1", atom, before="allow", after='allow')
+cmonBondLine += namedRe("Loc1", loc, before="allow", after='none')
+cmonBondLine += r"\-" + namedRe("Atom2", atom, before='allow', after='none')
+cmonBondLine += namedRe("Loc2", loc, before='allow', after='none') + r"\*?"
+cmonBondLineRe = re.compile(cmonBondLine)
+
+####3C Bond Regex####
+cmon3CBondLine = namedRe("Coef", reFloat, before="allow", after='none')
+cmon3CBondLine += r"\*\[" + namedRe("NBO", r"\d+", before='allow', after='none') + r"\]\:"
+cmon3CBondLine += namedRe("Type",  r'3C[a-z]*\**', before="require", after='allow')
+cmon3CBondLine += r"\(" + namedRe("Index", r"\d+",before="allow", after='none') + r"\)"
+cmon3CBondLine += namedRe("Loc1", loc, before="allow", after='allow')+r'\-'
+cmon3CBondLine += namedRe("Loc2", loc, before='allow', after='allow')+r'\-'
+cmon3CBondLine += namedRe("Loc3", loc, before='allow', after='none')
+cmon3CBondLineRe = re.compile(cmon3CBondLine)
+
+####MO Regex####
+cmonMOLine = namedRe("Label1", r"[M][O]", before='allow')
+cmonMOLine += namedRe("MO", r"\d+")
+cmonMOLine += r"\(" + namedRe("Type", r"\w+", after='none') + r"\)\:"
+cmonMOLine += namedRe("Label3", r"\w+\s+\w+", before="require")
+cmonMOLine += r"\=" + namedRe("Energy", reFloat, before="allow")
+cmonMOLine += namedRe("Unit", r"[a]\.[u]\.",after='allow')
+cmonMOLineRe = re.compile(cmonMOLine)
+
 def parseCMON(text, verbose=False):
 
     try:
@@ -27,49 +71,6 @@ def parseCMON(text, verbose=False):
     except:
         pass
 
-    reFloat = r"-?\d+\.\d+"
-    atom = r"[A-Z][a-z]?"
-    loc = r"\d?\**"
-    ####NonBond Regex####
-    nonBondType = r"\d*[A-Z][A-Z]?[a-z]?"
-    cmonLine = namedRe("Coef", reFloat, before="allow", after='none')
-    cmonLine += r"\*\[" + namedRe("NBO", r"\d+", before="allow", after='none') + r"\]\:"
-    cmonLine += namedRe("Type", nonBondType, before="require")
-    cmonLine += r"\(" + namedRe("Index", r"\d+", before="allow", after='none') + r"\)"
-    cmonLine += namedRe("Atom", atom, before="allow", after='allow')
-    cmonLine += namedRe("Loc", loc, before="none", after='none')
-    cmonLineRe = re.compile(cmonLine)
-
-    ####Bond Regex####
-    bondType = r"[A-Z]{2,}"
-    cmonBondLine = namedRe("Coef", reFloat, before="allow", after='none')
-    cmonBondLine += r"\*\[" + namedRe("NBO", r"\d+", before='allow', after='none') + r"\]\:"
-    cmonBondLine += namedRe("Type", bondType, before="require", after='allow')
-    cmonBondLine += r"\(" + namedRe("Index", r"\d+",before="allow", after='none') + r"\)"
-    cmonBondLine += namedRe("Atom1", atom, before="allow", after='allow')
-    cmonBondLine += namedRe("Loc1", loc, before="allow", after='none')
-    cmonBondLine += r"\-" + namedRe("Atom2", atom, before='allow', after='none')
-    cmonBondLine += namedRe("Loc2", loc, before='allow', after='none') + r"\*?"
-    cmonBondLineRe = re.compile(cmonBondLine)
-
-    ####3C Bond Regex####
-    cmon3CBondLine = namedRe("Coef", reFloat, before="allow", after='none')
-    cmon3CBondLine += r"\*\[" + namedRe("NBO", r"\d+", before='allow', after='none') + r"\]\:"
-    cmon3CBondLine += namedRe("Type",  r'3C[a-z]*\**', before="require", after='allow')
-    cmon3CBondLine += r"\(" + namedRe("Index", r"\d+",before="allow", after='none') + r"\)"
-    cmon3CBondLine += namedRe("Loc1", loc, before="allow", after='allow')+r'\-'
-    cmon3CBondLine += namedRe("Loc2", loc, before='allow', after='allow')+r'\-'
-    cmon3CBondLine += namedRe("Loc3", loc, before='allow', after='none')
-    cmon3CBondLineRe = re.compile(cmon3CBondLine)
-
-    ####MO Regex####
-    cmonMOLine = namedRe("Label1", r"[M][O]", before='allow')
-    cmonMOLine += namedRe("MO", r"\d+")
-    cmonMOLine += r"\(" + namedRe("Type", r"\w+", after='none') + r"\)\:"
-    cmonMOLine += namedRe("Label3", r"\w+\s+\w+", before="require")
-    cmonMOLine += r"\=" + namedRe("Energy", reFloat, before="require")
-    cmonMOLine += namedRe("Unit", r"[a]\.[u]\.",after='allow')
-    cmonMOLineRe = re.compile(cmonMOLine)
 
     result = {}
     currentMO = None
