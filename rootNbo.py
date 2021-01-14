@@ -188,7 +188,7 @@ def parseNPA(npa, triplet=False) -> list:
 Finds the final geometry. 
 Set nbo_log=True when parsing a log file of nbo calculation. 
 '''
-_coord = lambda name: "(?P<" + name + ">" + r'-?\d+\.?\d*' + ")"
+_coord = lambda name: "(?P<" + name + ">" + r'-?\d+\.+\d*' + ")"
 coord_line = "(?P<atom>" + r'[A-Z][a-z]?' +")"
 coord_line += r','
 coord_line += _coord('x')
