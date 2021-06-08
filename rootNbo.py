@@ -4,18 +4,29 @@ import re
 
 # These two function extract the information needed and seperate them into different seperate files
 # based on the origin file(whether it is a triplet or singlet)
-def unrestricted(file, selected=None):
+def unrestricted(file, options=None):
 
     tabs = {}
 
-    if 'nboSum' in selected:
-        nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
-        nboSumEnd = brf.find("Total Lewis",file)
-        nboSumAlpha = file[nboSumStart[0]:nboSumEnd[len(nboSumEnd)-4]]
-        nboSumBeta = file[nboSumStart[1]:nboSumEnd[len(nboSumEnd)-1]]
-        tabs['nboSumAlpha'], tabs['nboSumBeta'] = nboSumAlpha, nboSumBeta
+    if 'nboSum' in options:
+        start = brf.find("NATURAL BOND ORBITALS (Summary):",file)
+        assert(len(start)==2)
+        start_alpha, start_beta = start
 
-    if 'nao' in selected:
+        end_total = brf.find("Total Lewis",file)
+        end_valence = brf.find("Valence non-Lewis",file)
+        end_alpha, end_beta = 0, 0
+        for i in end_total:
+            for j in end_valence:
+                if j == i+1:
+                    if i < start_beta and j < start_beta:
+                        end_alpha = max(end_alpha, i)
+                    else:
+                        assert(i > start_beta and j > start_beta)
+                        end_beta = max(end_beta, i)
+        tabs['nboSumAlpha'], tabs['nboSumBeta'] = file[start_alpha:end_alpha+5], file[start_beta:end_beta+5]
+
+    if 'nao' in options:
         startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
         endNAO = brf.find("Summary of Natural Population Analysis:",file)
         naoAll = file[startNAO[0]:endNAO[0]]
@@ -23,15 +34,16 @@ def unrestricted(file, selected=None):
         naoBeta = file[startNAO[2]:endNAO[2]]
         tabs['naoAll'], tabs['naoAlpha'], tabs['naoBeta'] = naoAll, naoAlpha, naoBeta
     
-    if 'nbo' in selected:
-        startNBOalpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)
-        startNBObeta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)
-        endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
-        nboAlpha = file[startNBOalpha[0]:endNBO[0]]
-        nboBeta = file[startNBObeta[0]:endNBO[1]]
-        tabs['nboAlpha'], tabs['nboBeta'] = nboAlpha, nboBeta
+    if 'nbo' in options:
+        start_alpha = brf.find("NATURAL BOND ORBITAL ANALYSIS, alpha spin orbitals:",file)[0]
+        start_beta = brf.find("NATURAL BOND ORBITAL ANALYSIS, beta spin orbitals:",file)[0]
+        end = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
+        assert len(end)==2
+        end_alpha, end_beta = end
+        tabs['nboAlpha'], tabs['nboBeta'] = file[start_alpha:end_alpha], file[start_beta:end_beta]
 
-    if 'nlmo' in selected:
+    if 'nlmo' in options:
+        # to be fixed
         startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
         endNLMO = brf.find("*******         Beta  spin orbitals         *******",file)
         endNLMO2 = brf.find("NBO analysis completed",file) 
@@ -39,16 +51,15 @@ def unrestricted(file, selected=None):
         nlmoBeta = file[startNLMO[1]:endNLMO2[0]]
         tabs['nlmoAlpha'], tabs['nlmoBeta'] = nlmoAlpha, nlmoBeta
     
-    if 'cmo' in selected:
-        startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
-        startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
-        cmoAlpha = file[startCMO[0]:startPert[0]]
-        cmoBeta = file[startCMO[1]:startPert[1]]
-        tabs['cmoAlpha'], tabs['cmoBeta'] = cmoAlpha, cmoBeta
+    if 'cmo' in options:
+        start = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
+        end = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
+        assert len(start)==2 and len(end)==2
+        tabs['cmoAlpha'], tabs['cmoBeta'] = file[start[0]: end[0]], file[start[1]: end[1]]
     
-    if 'pert' in selected:
-        if 'CMO' not in selected:
-            startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
+    if 'pert' in options:
+        # no clear end for perturbation analysis, assuming nbo calculation is included
+        startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
         endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
         pertAlpha = file[startPert[0]:endPert[0]]
         pertBeta = file[startPert[1]:endPert[1]]
@@ -56,36 +67,36 @@ def unrestricted(file, selected=None):
     
     return tabs
     
-def restricted(file, selected=None):
+def restricted(file, options=None):
 
     tabs = {}
 
-    if 'nboSum' in selected:
+    if 'nboSum' in options:
         nboSumStart = brf.find("NATURAL BOND ORBITALS (Summary):",file)
         nboSumEnd = brf.find("$END",file)
         tabs['nboSum'] = file[nboSumStart[0]:nboSumEnd[0]]
     
-    if 'nao' in selected:
+    if 'nao' in options:
         startNAO = brf.find("NATURAL POPULATIONS:  Natural atomic orbital occupancies",file)
         endNAO = brf.find("Summary of Natural Population Analysis:",file)
         tabs['nao'] = file[startNAO[0]:endNAO[0]]
     
-    if 'nbo' in selected:
+    if 'nbo' in options:
         startNBO = brf.find("NATURAL BOND ORBITAL ANALYSIS",file)
         endNBO = brf.find("NHO DIRECTIONALITY AND BOND BENDING",file)
         tabs['nbo'] = file[startNBO[0]:endNBO[0]]
     
-    if 'nlmo' in selected:
+    if 'nlmo' in options:
         startNLMO = brf.find("NATURAL LOCALIZED MOLECULAR ORBITAL (NLMO) ANALYSIS:",file)
         endNLMO = brf.find("NBO analysis completed",file) 
         tabs['nlmo'] = file[startNLMO[0]:endNLMO[0]]
     
-    if 'cmo' in selected:
+    if 'cmo' in options:
         startCMO = brf.find("CMO: NBO Analysis of Canonical Molecular Orbitals",file)
         endCMO = brf.find("Molecular Orbital Atom-Atom Bonding Character",file)
         tabs['cmo'] = file[startCMO[0]:endCMO[0]]
     
-    if 'pert' in selected:
+    if 'pert' in options:
         startPert = brf.find("SECOND ORDER PERTURBATION THEORY ANALYSIS OF FOCK MATRIX IN NBO BASIS",file)
         endPert = brf.find("NATURAL BOND ORBITALS (Summary):",file)
         tabs['pert'] = file[startPert[0]:endPert[0]]
@@ -93,7 +104,7 @@ def restricted(file, selected=None):
     return tabs
 
 class nbo(object):
-    def __init__(self, file, selected=None, triplet=False, determine_triplet=False):
+    def __init__(self, file, options=None, triplet=False, determine_triplet=False):
         lines = brf.readlines(file)
         self.triplet = triplet
         if determine_triplet:
@@ -102,21 +113,21 @@ class nbo(object):
                     self.triplet = True
                     break
         self.npa,self.badAts,self.badAtsF = findNpa(file)
-        if 'npa' in selected:
+        if 'npa' in options:
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
         else:
             del self.npa
         if self.triplet:
-            tabs = unrestricted(lines, selected=selected)
-            for key in selected:
+            tabs = unrestricted(lines, options=options)
+            for key in options:
                 if key != 'npa':
                     setattr(self, key+'A', nbo.replacement(tabs[key+'Alpha'],self.badAts,self.badAtsF))
                     setattr(self, key+'B', nbo.replacement(tabs[key+'Beta'],self.badAts,self.badAtsF))
                     if key == 'nao':
                         setattr(self, 'nao', nbo.replacement(tabs['naoAll'],self.badAts,self.badAtsF))
         else:
-            tabs = restricted(lines, selected=selected)
-            for key in selected:
+            tabs = restricted(lines, options=options)
+            for key in options:
                 if key != 'npa':
                     setattr(self, key, nbo.replacement(tabs[key],self.badAts,self.badAtsF))
     

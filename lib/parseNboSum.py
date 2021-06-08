@@ -75,7 +75,7 @@ def parse3CBond(file, verbose=False):
             print('IGNORE: ', line)
     return result
 
-def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3C", "3Cn", "3Cs"]):
+def parseNboSum(file, verbose=False, options=["CR", "LP", "LV", "BD", "ABB", "3C", "3Cn", "3Cs"]):
 
     tables = {}
         
@@ -86,7 +86,7 @@ def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3
         return df
     
     for key in ['CR', 'LP', 'LV']:
-        if key in selected:
+        if key in options:
             pos = find(key, file)
             table = pd.DataFrame(parseNonBond(extract(file, pos), verbose=verbose))
             try:
@@ -97,7 +97,7 @@ def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3
                     print("Table of "+key+" is empty or in wrong format.")
     
     for key in ['BD', 'ABB']:
-        if key in selected:
+        if key in options:
             if key=='ABB':
                 pos = find("BD*(", file)
             else:
@@ -111,7 +111,7 @@ def parseNboSum(file, verbose=False, selected=["CR", "LP", "LV", "BD", "ABB", "3
                     print("Table of "+key+" is empty or in wrong format.")
 
     for key in ['3C', '3Cn', '3Cs']:
-        if key in selected:
+        if key in options:
             if key=='3Cn':
                 pos = find("3Cn", file)
             elif key=='3Cs':
