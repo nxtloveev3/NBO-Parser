@@ -2,57 +2,55 @@ from .basicReadingFunctions import namedRe
 import re
 import string
 
-def parseNLMO(file):
-    tmpFile = []
+####Nlmo Regex####
+reFloat = r"-?\d+\.\d+"
+bondType = r"[A-Z][A-Z][A-Z]?"
+nonBondType = r"[A-Z][A-Z]"
+atom = r"[A-Z][a-z]?\s*\d+"
+nlmoNonBondLine = namedRe("NLMO", r"\d+",before='allow',after='none') + r"\." 
+nlmoNonBondLine += r"\s+\(" + namedRe("Occupancy", reFloat,before='allow',after='none') + r"\)"
+nlmoNonBondLine += namedRe("PercentFromNBO", reFloat,before='allow',after='none') + r"\%"
+nlmoNonBondLine += namedRe("Type", nonBondType,before='allow')
+nlmoNonBondLine += r"\(" + namedRe("Index", r"\d+",before="allow",after="none") + r"\)"
+nlmoNonBondLine += namedRe("Atom", atom,before='allow',after='allow')
+nlmoNonBondLineRe = re.compile(nlmoNonBondLine)
+
+nlmoBondLine = namedRe("NLMO", r"\d+",before='allow',after='none') + r"\."
+nlmoBondLine += r"\s+\(" + namedRe("Occupancy", reFloat,before='allow',after='none') + r"\)"
+nlmoBondLine += namedRe("PercentFromNBO", reFloat,before='allow',after='none') + r"\%"
+nlmoBondLine += namedRe("Type", bondType,before='allow')
+nlmoBondLine += r"\(" + namedRe("Index", r"\d+",before="allow",after="none") + r"\)"
+nlmoBondLine += namedRe("Atom", atom,before='allow',after='none') + r"\-"
+nlmoBondLine += namedRe("Atom2", atom,before='allow',after='allow')
+nlmoBondLineRe = re.compile(nlmoBondLine)
+
+nlmoHybridSLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
+nlmoHybridSLine += namedRe("Atom", atom,before='allow')
+nlmoHybridSLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
+nlmoHybridSLineRe = re.compile(nlmoHybridSLine)
+
+nlmoHybridPLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
+nlmoHybridPLine += namedRe("Atom", atom,before='allow')
+nlmoHybridPLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
+nlmoHybridPLine += r"\s*" + r"[p]\s*\-?\d+\.\d+\s*\(" + namedRe("pOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
+nlmoHybridPLineRe = re.compile(nlmoHybridPLine)
+    
+nlmoHybridDLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
+nlmoHybridDLine += namedRe("Atom", atom,before='allow')
+nlmoHybridDLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
+nlmoHybridDLine += r"\s*" + r"[p]\s*\-?\d+\.\d+\s*\(" + namedRe("pOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
+nlmoHybridDLine += r"\s*" + r"[d]\s*\-?\d+\.\d+\s*\(" + namedRe("dOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
+nlmoHybridDLineRe = re.compile(nlmoHybridDLine)
+
+def parseNLMO(file, verbose=False):
+    
     for line in file:
-        newline = line
         if "BD*" in line:
-            newline = line.replace("BD*","ABB") #ABB stand for antibonding bonds
-        tmpFile.append(newline)
-    
-    ####Nlmo Regex####
-    reFloat = r"-?\d+\.\d+"
-    bondType = r"[A-Z][A-Z][A-Z]?"
-    nonBondType = r"[A-Z][A-Z]"
-    atom = r"[A-Z][a-z]?\s*\d+"
-    nlmoNonBondLine = namedRe("NLMO", r"\d+",before='allow',after='none') + r"\." 
-    nlmoNonBondLine += r"\s+\(" + namedRe("Occupancy", reFloat,before='allow',after='none') + r"\)"
-    nlmoNonBondLine += namedRe("PercentFromNBO", reFloat,before='allow',after='none') + r"\%"
-    nlmoNonBondLine += namedRe("Type", nonBondType,before='allow')
-    nlmoNonBondLine += r"\(" + namedRe("Index", r"\d+",before="allow",after="none") + r"\)"
-    nlmoNonBondLine += namedRe("Atom", atom,before='allow',after='allow')
-    nlmoNonBondLineRe = re.compile(nlmoNonBondLine)
-
-    nlmoBondLine = namedRe("NLMO", r"\d+",before='allow',after='none') + r"\."
-    nlmoBondLine += r"\s+\(" + namedRe("Occupancy", reFloat,before='allow',after='none') + r"\)"
-    nlmoBondLine += namedRe("PercentFromNBO", reFloat,before='allow',after='none') + r"\%"
-    nlmoBondLine += namedRe("Type", bondType,before='allow')
-    nlmoBondLine += r"\(" + namedRe("Index", r"\d+",before="allow",after="none") + r"\)"
-    nlmoBondLine += namedRe("Atom", atom,before='allow',after='none') + r"\-"
-    nlmoBondLine += namedRe("Atom2", atom,before='allow',after='allow')
-    nlmoBondLineRe = re.compile(nlmoBondLine)
-
-    nlmoHybridSLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
-    nlmoHybridSLine += namedRe("Atom", atom,before='allow')
-    nlmoHybridSLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
-    nlmoHybridSLineRe = re.compile(nlmoHybridSLine)
-    
-    nlmoHybridPLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
-    nlmoHybridPLine += namedRe("Atom", atom,before='allow')
-    nlmoHybridPLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
-    nlmoHybridPLine += r"\s*" + r"[p]\s*\-?\d+\.\d+\s*\(" + namedRe("pOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
-    nlmoHybridPLineRe = re.compile(nlmoHybridPLine)
-    
-    nlmoHybridDLine = namedRe("Percent", reFloat,before='allow',after='none') + r"\%"
-    nlmoHybridDLine += namedRe("Atom", atom,before='allow')
-    nlmoHybridDLine += r"[s]\s*\(" + namedRe("sOrbit", reFloat,before='allow',after='none') + r"\%\)"
-    nlmoHybridDLine += r"\s*" + r"[p]\s*\-?\d+\.\d+\s*\(" + namedRe("pOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
-    nlmoHybridDLine += r"\s*" + r"[d]\s*\-?\d+\.\d+\s*\(" + namedRe("dOrbit", r"\d+\.\d+",before='allow',after='none') + r"\%\)"
-    nlmoHybridDLineRe = re.compile(nlmoHybridDLine)
+            line = line.replace("BD*","ABB") #ABB stands for antibonding bonds
 
     result = {}
     currentNLMO = None
-    for line in tmpFile:
+    for line in file:
         if nlmoNonBondLineRe.search(line):
             info = nlmoNonBondLineRe.match(line).groupdict()
             currentNLMO = info["NLMO"]
@@ -95,6 +93,7 @@ def parseNLMO(file):
             info["sOrbit"] = float(info["sOrbit"])
             result[currentNLMO]["HybridContribution"].append(info)  
         else:
-            print("Ignoring line", line)
+            if verbose:
+                print("Ignoring line", line)
 
     return result

@@ -14,28 +14,14 @@ def readlines(file):
 def find(text,file):
     result = []
     count = 0
-    for elem in file:
-        if text in elem:
+    for line in file:
+        if text in line:
             result.append(count)
         count += 1
     return result
 
-# Similar to the last function but locates the exact text.
-def findExact(text,file):
-    result = []
-    count = 0
-    for line in file:
-        for elem in line:
-            if elem == text:
-                result.append(count)
-        count += 1
-    return result
-
-def replacingDigit(index,file):
-    file = file.split()
-    if file[index].endswith("."): #Treat the number so it is easier to recognize as digit (Ex: 120. -> 120)
-        file[index] = file[index][:-1]
-    return file
+def extract(file, pos):
+    return [file[i] for i in pos]
 
 #Following two equation takes in information and generates new table that takes unnecessary information out.
 def fixEnding(posFile,tmpFile):
@@ -99,7 +85,7 @@ def toTable(file,titles):
     return dataTable
 
 
-def namedRe(name, respec, before = 'none', after='require'): #function wrote by David Yaron
+def namedRe(name, respec, before='none', after='require'): #function written by David Yaron
     '''
       wraps a regular expression in a block that gives it a name:
           (?P<name> respec)
@@ -113,3 +99,15 @@ def namedRe(name, respec, before = 'none', after='require'): #function wrote by 
           'require' : r'\s+'}
     res = ws[before] + "(?P<" + name + ">" + respec + ")" + ws[after]
     return res
+
+def fix_badatom(atom):
+    if ' ' in atom:
+        return atom.split()
+    a = ''
+    i = ''
+    for chr_ in atom:
+        if chr_.isalpha():
+            a += chr_
+        else:
+            i += chr_
+    return [a, i]
