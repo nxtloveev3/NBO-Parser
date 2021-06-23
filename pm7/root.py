@@ -130,6 +130,28 @@ def findNpa(text):
         badAtsF.append(result)
     return (npa,badAts,badAtsF)
 
+#This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
+def parseNPA(npa, triplet=False) -> list:
+    columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
+    length = 7 + int(triplet)
+    if triplet:
+        columns.append('Natural Spin Density')
+    def helper(line):
+        element = ''.join([i for i in line[0] if i.isalpha()])
+        return [element, line[0].replace(element, '')] + line[1:]
+    text = [i.split() for i in npa]
+    result = []
+    for line in text:
+        if len(line) != length:
+            line = helper(line)
+        new = {'Atom': line[0]}
+        new['No'] = int(line[1])
+        for i in range(2, length):
+            new[columns[i]] = float(line[i])
+        result.append(new)
+    return result
+
+
 ##### Begin regex constant definition #####
 regexInt = r"-?\d+"
 regexFloat = r"-?\d+\.\d+"
