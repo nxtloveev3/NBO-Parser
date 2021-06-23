@@ -130,38 +130,40 @@ def findNpa(text):
         badAtsF.append(result)
     return (npa,badAts,badAtsF)
 
-'''
-Finds the final geometry. 
-Set nbo_log=True when parsing a log file of nbo calculation. 
-'''
-_coord = lambda name: "(?P<" + name + ">" + r'-?\d+\.+\d*' + ")"
-coord_line = "(?P<atom>" + r'[A-Z][a-z]?' +")"
-coord_line += r','
-coord_line += _coord('x')
-coord_line += r','
-coord_line += _coord('y')
-coord_line += r','
-coord_line += _coord('z')
-coordRe = re.compile(coord_line)
-coord_line_nbo = "(?P<atom>" + r'[A-Z][a-z]?' +")"
-coord_line_nbo += r',0'
-coord_line_nbo += r','
-coord_line_nbo += _coord('x')
-coord_line_nbo += r','
-coord_line_nbo += _coord('y')
-coord_line_nbo += r','
-coord_line_nbo += _coord('z')
-coordRe_nbo = re.compile(coord_line_nbo)
+##### Begin regex constant definition #####
+regexInt = r"-?\d+"
+regexFloat = r"-?\d+\.\d+"
+regexAtom = r"[A-Z][a-z]?"
 
-def parseXYZ(filename, nbo_log=False):
-    with open(filename, 'r') as file:
-        text = file.read().replace('\n', '').replace(' ', '')
-    if nbo_log:
-        r = coordRe_nbo
-    else:
-        r = coordRe
-    def helper(x):
-        for i in ['x', 'y', 'z']:
-            x[i] = float(x[i])
-        return x
-    return [helper(j.groupdict()) for j in r.finditer(text)]
+xyzRegex = brf.namedRe('atomNumber', regexInt, before='allow', after='require')
+xyzRegex += brf.namedRe('atom', regexAtom, before='allow', after='require')
+xyzRegex += brf.namedRe('x', regexFloat, before='allow', after='require')
+xyzRegex += brf.namedRe('y', regexFloat, before='allow', after='require')
+xyzRegex += brf.namedRe('z', regexFloat, before='allow', after='allow')
+xyxRegexObj = re.compile(xyzRegex)
+
+def parseXYZpm7(filename, verbose=False):
+    
+    # There are two CARTESIAN COORDINATES table in each .aout file.
+    # We only need the *SECOND* geometry xyz table 
+    
+    lines = brf.readlines(filename)
+    xyz_start = brf.find("ATOM            X               Y               Z", lines)[-1]
+    lines = lines[xyz_start:]
+    lines = lines[:lines.index('')]
+    extractedAtoms = [] # list of parsed atom+coord lines
+
+    for line in lines:
+
+        currentLineMatch = xyxRegexObj.fullmatch(line) 
+        if currentLineMatch:
+            currentLineDict = currentLineMatch.groupdict()
+            currentLineDict.pop('atomNumber')
+            for key in ['x', 'y', 'z']:
+                currentLineDict[key] = float(currentLineDict[key])
+            extractedAtoms.append(currentLineDict) # Add matched line to list using a dictionary format.
+    
+        if verbose:
+            print(currentLineMatch, ' ', line)
+
+    return extractedAtoms
