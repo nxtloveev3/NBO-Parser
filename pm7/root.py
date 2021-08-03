@@ -1,6 +1,11 @@
 from .lib import basicReadingFunctions as brf
+from .lib import parseNAOdiscriptor as pNaoD
 import copy
 import re
+import os 
+import pandas as pd
+import openpyxl
+import numpy as np
 
 # These two function extract the information needed and seperate them into different seperate files
 # based on the origin file(whether it is a triplet or singlet)
@@ -53,7 +58,7 @@ def restricted(file, options=None):
     return tabs
 
 class nbo(object):
-    def __init__(self, file, options=None, triplet=False, determine_triplet=False):
+    def __init__(self, file, option=None, triplet=False, determine_triplet=False):
         lines = brf.readlines(file)
         self.triplet = triplet
         if determine_triplet:
@@ -62,32 +67,34 @@ class nbo(object):
                     self.triplet = True
                     break
         self.npa,self.badAts,self.badAtsF = findNpa(file)
-        if 'npa' in options:
+        if 'npa' in option:
             self.npa = nbo.replacement(self.npa,self.badAts,self.badAtsF)
         else:
             del self.npa
         if self.triplet:
-            tabs = unrestricted(lines, options=options)
-            if len(re.compile('\W').split(options)) > 1:
-                for key in options:
+            tabs = unrestricted(lines, options=option)
+            if len(re.compile('\W').split(option)) > 1:
+                for key in option:
                     if key != 'npa':
                         setattr(self, key+'A', nbo.replacement(tabs[key+'Alpha'],self.badAts,self.badAtsF))
                         setattr(self, key+'B', nbo.replacement(tabs[key+'Beta'],self.badAts,self.badAtsF))
                         if key == 'nao':
                             setattr(self, 'nao', nbo.replacement(tabs['naoAll'],self.badAts,self.badAtsF))
             else:
-                setattr(self, options, nbo.replacement(tabs[options],self.badAts,self.badAtsF))
-                setattr(self, options, nbo.replacement(tabs[options],self.badAts,self.badAtsF))
-                if options == 'nao':
+                if option != 'npa':
+                    setattr(self, option, nbo.replacement(tabs[option],self.badAts,self.badAtsF))
+                    setattr(self, option, nbo.replacement(tabs[option],self.badAts,self.badAtsF))
+                if option == 'nao':
                     setattr(self, 'nao', nbo.replacement(tabs['naoAll'],self.badAts,self.badAtsF))            
         else:
-            tabs = restricted(lines, options=options)
-            if len(re.compile('\W').split(options)) > 1:
-                for key in options:
+            tabs = restricted(lines, options=option)
+            if len(re.compile('\W').split(option)) > 1:
+                for key in option:
                     if key != 'npa':
                         setattr(self, key, nbo.replacement(tabs[key],self.badAts,self.badAtsF))
             else:
-                setattr(self, options, nbo.replacement(tabs[options],self.badAts,self.badAtsF))
+                if option != 'npa':
+                    setattr(self, option, nbo.replacement(tabs[option],self.badAts,self.badAtsF))
     
     #This method replaces all the incorrect characters with correct ones
     @staticmethod
@@ -133,19 +140,12 @@ def findNpa(text):
 #This method reparses NPA into a list of dictionaries. Could be converted into a dataframe directly.
 def parseNPA(npa, triplet=False) -> list:
     columns = ['Atom', 'No', 'Natural Charge', 'Core', 'Valence', 'Rydeberg', 'Total']
-    length = 7 + int(triplet)
-    if triplet:
-        columns.append('Natural Spin Density')
-    def helper(line):
-        element = ''.join([i for i in line[0] if i.isalpha()])
-        return [element, line[0].replace(element, '')] + line[1:]
+    length = 7
     text = [i.split() for i in npa]
     result = []
     for line in text:
-        if len(line) != length:
-            line = helper(line)
-        new = {'Atom': line[0]}
-        new['No'] = int(line[1])
+        new = {'Atom': line[1]}
+        new['No'] = line[0]
         for i in range(2, length):
             new[columns[i]] = float(line[i])
         result.append(new)
@@ -189,3 +189,78 @@ def parseXYZpm7(filename, verbose=False):
             print(currentLineMatch, ' ', line)
 
     return extractedAtoms
+
+def discriptorParserNpa(fileS, fileT, verbose = False):
+    fdS = openpyxl.load_workbook(fileS)
+    fdT = openpyxl.load_workbook(fileT)
+    sheetS = fdS['Sheet1']
+    sheetT = fdT['Sheet1']
+    #if type == None: print("Please provide type singlet/triplet")
+    npa = ['Natural charge Singlet', 'Natural charge Triplet']  #'Natural Spin Density'
+    for i in range(len(npa)):
+        npa[i] = []
+
+    for row in range(2, sheetS.max_row + 1):
+        chargeS = sheetS['D' + str(row)].value
+        npa[0].append(chargeS)
+    for row in range(2, sheetT.max_row + 1):
+        chargeT = sheetT['D' + str(row)].value    
+        npa[1].append(chargeT)
+    #if type == 'singlet':
+        #result = pd.DataFrame(npa)
+        #result.fillna(0)
+        #if verbose: print(result)
+        #return result
+    #elif type == 'triplet' and text != None:
+        #lines = brf.readlines(text)
+        # pos1 = brf.find("ATOMIC ORBITAL SPIN POPULATIONS", lines)
+        #pos2 = brf.find("N A T U R A L   A T O M I C   O R B I T A L   A N D", lines)
+        #spinDens = lines[(pos1[0]+1):(pos2[0]-1)]
+        #for num in spinDens:
+            #for float in re.split(' +', num):
+                #npa[2].append(float)
+    #else: print("Require text for npa spin population!")   
+    result = pd.DataFrame(npa)
+    result.fillna(0) 
+    if verbose: print(result)
+    return result.T
+
+def parseDiscriptor(pathS, pathT):
+    disDic = {}
+    for filename in os.listdir(pathS):
+        if filename.endswith(".xlsx"):
+            complex = re.findall(r'\d+', filename)
+            assert(len(complex) == 2)
+            cn = complex[0]
+            nn = complex[1]
+            if cn not in disDic:
+                disDic[cn] = {}
+            disDic[cn][nn] = {}
+            try:
+                disDic[cn][nn]['npa'] = discriptorParserNpa(os.path.join(pathS, filename),os.path.join(pathT, filename), verbose = False)
+            except:
+                print(filename)
+    #for filename in os.listdir(pathT):
+        #if filename.endswith(".xlsx"):
+            #complex = re.findall(r'\d+', filename)
+            #assert(len(complex) == 2)
+            #cn = complex[0]
+            #nn = complex[1]
+            #for text in os.listdir(filePath):
+                #if cn in text and nn in text:
+                    #textName = text
+            #assert(textName != None)
+            #if cn not in disDic or nn not in disDic[cn]:
+                #print(cn, nn, 'not found in singlet file')
+            #else:
+                #singlet = disDic[cn][nn]['npa']
+                #try:
+                    #triplet = discriptorParserNpa(os.path.join(pathT, filename), type = 'triplet', verbose = False, text = os.path.join(filePath, textName))
+                    #npa = singlet.append(triplet)
+                    #disDic[cn][nn]['npa'] = npa.T
+                #except:
+                    #print(filename, textName)
+    #disDic[cn][nn]['nao'] = pNaoD.discriptorParserNao(os.path.join(pathS, filename), option = 'naoS', verbose = False)
+    #disDic[cn][nn]['nao'] = pNaoD.discriptorParserNao(os.path.join(path, filename), option = 'naoT', verbose = False)
+    return disDic
+                
